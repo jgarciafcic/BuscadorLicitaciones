@@ -1,14 +1,20 @@
 package com.placsp.monitor.controller;
 
+import com.placsp.monitor.model.Licitacion;
+import com.placsp.monitor.repository.LicitacionRepository;
 import com.placsp.monitor.service.FeedIngestaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/ingesta")
@@ -17,9 +23,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class IngestaController {
 
     private final FeedIngestaService feedIngestaService;
+    private final LicitacionRepository licitacionRepository;
 
-    public IngestaController(FeedIngestaService feedIngestaService) {
+    public IngestaController(FeedIngestaService feedIngestaService, LicitacionRepository licitacionRepository) {
         this.feedIngestaService = feedIngestaService;
+        this.licitacionRepository = licitacionRepository;
     }
 
     @PostMapping("/ejecutar")
@@ -29,5 +37,12 @@ public class IngestaController {
             @RequestParam(required = false) String fromUrl) {
         var resumen = feedIngestaService.ejecutar(Math.max(1, Math.min(pages, 200)), fromUrl);
         return ResponseEntity.ok(resumen);
+    }
+
+    @PostMapping("/importar")
+    @Operation(summary = "Importar licitaciones en bulk", description = "Recibe una lista de licitaciones en JSON y las guarda (upsert por entryId).")
+    public ResponseEntity<Map<String, Object>> importar(@RequestBody List<Licitacion> licitaciones) {
+        var saved = licitacionRepository.saveAll(licitaciones);
+        return ResponseEntity.ok(Map.of("importadas", saved.size()));
     }
 }

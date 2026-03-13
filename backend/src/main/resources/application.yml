@@ -1,3 +1,9 @@
+server:
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+
 placsp:
   feed:
     url: https://contrataciondelsectorpublico.gob.es/sindicacion/sindicacion_643/licitacionesPerfilesContratanteCompleto3.atom
