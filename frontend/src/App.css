@@ -1,0 +1,115 @@
+.app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 2rem 2rem;
+}
+
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 3px solid #93a500;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.header-logo {
+  height: 40px;
+  width: auto;
+}
+
+.app-header h1 {
+  color: #1a1a2e;
+  font-size: 1.5rem;
+  font-weight: 700;
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.btn-manual {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #1a1a2e;
+  color: #fff;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.btn-manual:hover {
+  background: #2a2a4e;
+}
+
+.btn-cantabria {
+  background: #0066cc;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 0.4rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-cantabria:hover {
+  background: #0055aa;
+}
+
+.btn-load-more {
+  background: #93a500;
+}
+
+.btn-load-more:hover:not(:disabled) {
+  background: #7a8a00;
+}
+
+.btn-ingesta {
+  background: #495057;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 0.4rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-ingesta:hover:not(:disabled) {
+  background: #343a40;
+}
+
+.btn-ingesta:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error-msg {
+  background: #ffeaea;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
+  border-radius: 4px;
+  padding: 0.6rem 1rem;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}

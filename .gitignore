@@ -1,0 +1,30 @@
+# === Backend ===
+backend/target/
+backend/data/
+backend/*.mv.db
+backend/*.trace.db
+
+# === Frontend ===
+frontend/node_modules/
+frontend/dist/
+frontend/.netlify/
+
+# === IDE ===
+.idea/
+.vscode/
+*.iml
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+
+# === Logs ===
+*.log
+
+# === Env ===
+.env
+.env.local
+.env.production.local
+.claude/

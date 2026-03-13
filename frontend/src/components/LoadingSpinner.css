@@ -1,0 +1,58 @@
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(245, 245, 245, 0.9);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.loading-logo {
+  width: 180px;
+  height: auto;
+}
+
+.loading-logo .puzzle-dark {
+  transform-origin: center;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.loading-logo .puzzle-light {
+  transform-origin: center;
+  animation: pulse 1.2s ease-in-out infinite 0.5s;
+}
+
+.loading-logo .logo-text {
+  animation: textFade 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+@keyframes textFade {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+.loading-text {
+  margin-top: 1rem;
+  font-size: 0.95rem;
+  color: #666;
+  font-weight: 600;
+}
+
+.loading-text::after {
+  content: '';
+  animation: dots 1.5s steps(4, end) infinite;
+}
+
+@keyframes dots {
+  0% { content: ''; }
+  25% { content: '.'; }
+  50% { content: '..'; }
+  75% { content: '...'; }
+}

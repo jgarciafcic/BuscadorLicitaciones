@@ -1,0 +1,140 @@
+.manual-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 150;
+}
+
+.manual-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+  z-index: 151;
+  width: 760px;
+  max-width: 95vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  animation: manual-fade-in 0.2s ease-out;
+}
+
+@keyframes manual-fade-in {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.96); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+.manual-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 3px solid #93a500;
+  flex-shrink: 0;
+}
+
+.manual-header h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  color: #1a1a2e;
+}
+
+.manual-close {
+  background: none;
+  border: none;
+  font-size: 1.3rem;
+  cursor: pointer;
+  color: #6c757d;
+  padding: 0.2rem 0.4rem;
+  line-height: 1;
+}
+
+.manual-close:hover {
+  color: #212529;
+}
+
+.manual-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem 1.5rem 2rem;
+}
+
+.manual-body section {
+  margin-bottom: 1.5rem;
+}
+
+.manual-body h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 0.5rem 0;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.manual-body p {
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: #333;
+  margin: 0.4rem 0;
+}
+
+.manual-body ul {
+  margin: 0.3rem 0;
+  padding-left: 1.4rem;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: #333;
+}
+
+.manual-body li {
+  margin-bottom: 0.3rem;
+}
+
+.manual-body code {
+  background: #f1f3f5;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  font-size: 0.82rem;
+  color: #0066cc;
+  font-weight: 600;
+}
+
+.manual-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5rem 0;
+  font-size: 0.82rem;
+}
+
+.manual-table th {
+  background: #f1f3f5;
+  padding: 0.45rem 0.6rem;
+  text-align: left;
+  font-weight: 600;
+  color: #1a1a2e;
+  border: 1px solid #dee2e6;
+}
+
+.manual-table td {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #dee2e6;
+  vertical-align: top;
+  color: #333;
+}
+
+.manual-table tbody tr:nth-child(even) {
+  background: #f8f9fa;
+}
+
+@media (max-width: 768px) {
+  .manual-modal {
+    width: 100vw;
+    max-width: 100vw;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+}

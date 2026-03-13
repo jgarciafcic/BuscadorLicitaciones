@@ -1,0 +1,133 @@
+.search-filters {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: flex-end;
+}
+
+.filters-extra {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed #ced4da;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+  flex: 1;
+}
+
+.filter-group.filter-texto {
+  flex: 2.5;
+  min-width: 250px;
+}
+
+.filter-group label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.filter-group input,
+.filter-group select {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  background: #fff;
+  color: #212529;
+}
+
+.filter-group input:focus,
+.filter-group select:focus {
+  outline: none;
+  border-color: #0066cc;
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.15);
+}
+
+.filters-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+
+.btn-toggle {
+  background: none;
+  border: none;
+  color: #0066cc;
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.25rem 0;
+  text-decoration: underline;
+}
+
+.btn-toggle:hover {
+  color: #004999;
+}
+
+.filter-cpv-group {
+  min-width: 160px;
+}
+
+.cpv-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.cpv-input-row input[type="text"] {
+  flex: 1;
+  min-width: 0;
+}
+
+.cpv-exclusivo-label {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #495057;
+  white-space: nowrap;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.cpv-exclusivo-label input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.btn-buscar {
+  background: #93a500;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 0.5rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-buscar:hover {
+  background: #7a8a00;
+}
+
+@media (max-width: 768px) {
+  .filter-group {
+    min-width: 100%;
+  }
+}

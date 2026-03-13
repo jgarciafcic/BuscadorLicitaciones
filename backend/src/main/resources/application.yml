@@ -1,0 +1,30 @@
+placsp:
+  feed:
+    url: https://contrataciondelsectorpublico.gob.es/sindicacion/sindicacion_643/licitacionesPerfilesContratanteCompleto3.atom
+    max-pages: 50
+    cron: "0 0 7 * * *"
+  llm:
+    provider: ollama                # "ollama" o "claude"
+    ollama-url: http://localhost:11434
+    ollama-model: qwen2.5:3b
+    claude-api-key: ${ANTHROPIC_API_KEY:}
+    claude-model: claude-sonnet-4-20250514
+    max-pdf-chars: 15000
+
+spring:
+  datasource:
+    url: jdbc:h2:file:./data/placsp
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  h2:
+    console:
+      enabled: true
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /api-docs

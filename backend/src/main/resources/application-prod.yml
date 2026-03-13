@@ -1,0 +1,19 @@
+spring:
+  datasource:
+    url: ${DATABASE_URL}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  h2:
+    console:
+      enabled: false
+
+placsp:
+  llm:
+    provider: claude
+    claude-api-key: ${ANTHROPIC_API_KEY:}
+    claude-model: claude-sonnet-4-20250514
