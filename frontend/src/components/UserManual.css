@@ -132,9 +132,56 @@
 
 @media (max-width: 768px) {
   .manual-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    transform: none;
     width: 100vw;
     max-width: 100vw;
+    height: 100vh;
     max-height: 100vh;
     border-radius: 0;
+    animation: none;
+  }
+
+  .manual-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .manual-header h2 {
+    font-size: 1rem;
+  }
+
+  .manual-body {
+    padding: 0.75rem 1rem 1.5rem;
+  }
+
+  .manual-body section {
+    margin-bottom: 1rem;
+  }
+
+  .manual-body h3 {
+    font-size: 0.85rem;
+  }
+
+  .manual-body p,
+  .manual-body ul {
+    font-size: 0.8rem;
+    line-height: 1.5;
+  }
+
+  .manual-table {
+    font-size: 0.75rem;
+  }
+
+  .manual-table th,
+  .manual-table td {
+    padding: 0.3rem 0.4rem;
+  }
+
+  /* Stack filter description table on very narrow screens */
+  .manual-table th:first-child,
+  .manual-table td:first-child {
+    white-space: nowrap;
   }
 }
