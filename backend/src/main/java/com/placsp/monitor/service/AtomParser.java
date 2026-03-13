@@ -51,6 +51,22 @@ public class AtomParser {
             StringBuilder textBuffer = new StringBuilder();
             StringJoiner cpvJoiner = null;
 
+            // Collectors for JSON array fields
+            StringBuilder criteriosBuilder = null;
+            StringBuilder lotesBuilder = null;
+            StringBuilder solvTecBuilder = null;
+            StringBuilder solvEcoBuilder = null;
+
+            // Current awarding criteria fields
+            String criterioTipo = null;
+            String criterioDescripcion = null;
+            String criterioPeso = null;
+
+            // Current lot fields
+            String loteId = null;
+            String loteObjeto = null;
+            String loteImporte = null;
+
             // Tracking nested context
             boolean inEntry = false;
             boolean inContractFolder = false;
@@ -68,6 +84,21 @@ public class AtomParser {
             boolean inTechnicalDocRef = false;
             boolean inAttachment = false;
             boolean inExternalRef = false;
+            boolean inPlannedPeriod = false;
+            boolean inContractExtension = false;
+            boolean inOptionValidityPeriod = false;
+            boolean inTenderingTerms = false;
+            boolean inAwardingTerms = false;
+            boolean inAwardingCriteria = false;
+            boolean inTendererQualification = false;
+            boolean inTechnicalEvaluation = false;
+            boolean inFinancialEvaluation = false;
+            boolean inProcurementProjectLot = false;
+            boolean inLotProcurementProject = false;
+            boolean inLotBudgetAmount = false;
+
+            // DurationMeasure attribute
+            String durationUnitCode = null;
 
             while (reader.hasNext()) {
                 int event = reader.next();
@@ -91,6 +122,10 @@ public class AtomParser {
                         inEntry = true;
                         current = new Licitacion();
                         cpvJoiner = new StringJoiner(",");
+                        criteriosBuilder = new StringBuilder("[");
+                        lotesBuilder = new StringBuilder("[");
+                        solvTecBuilder = new StringBuilder();
+                        solvEcoBuilder = new StringBuilder();
                     }
 
                     if (!inEntry) continue;
@@ -109,13 +144,21 @@ public class AtomParser {
                     }
 
                     if (inContractFolder) {
-                        // ProcurementProject
+                        // ProcurementProject (main, not inside lot)
                         if (NS_CAC.equals(ns) && "ProcurementProject".equals(local)) {
-                            inProcurementProject = true;
+                            if (inProcurementProjectLot) {
+                                inLotProcurementProject = true;
+                            } else {
+                                inProcurementProject = true;
+                            }
                         }
                         // BudgetAmount
-                        if (inProcurementProject && NS_CAC.equals(ns) && "BudgetAmount".equals(local)) {
-                            inBudgetAmount = true;
+                        if (NS_CAC.equals(ns) && "BudgetAmount".equals(local)) {
+                            if (inLotProcurementProject) {
+                                inLotBudgetAmount = true;
+                            } else if (inProcurementProject) {
+                                inBudgetAmount = true;
+                            }
                         }
                         // RequiredCommodityClassification
                         if (inProcurementProject && NS_CAC.equals(ns) && "RequiredCommodityClassification".equals(local)) {
@@ -124,6 +167,18 @@ public class AtomParser {
                         // RealizedLocation
                         if (inProcurementProject && NS_CAC.equals(ns) && "RealizedLocation".equals(local)) {
                             inRealizedLocation = true;
+                        }
+                        // PlannedPeriod
+                        if (inProcurementProject && !inProcurementProjectLot && NS_CAC.equals(ns) && "PlannedPeriod".equals(local)) {
+                            inPlannedPeriod = true;
+                        }
+                        // ContractExtension
+                        if (inProcurementProject && !inProcurementProjectLot && NS_CAC.equals(ns) && "ContractExtension".equals(local)) {
+                            inContractExtension = true;
+                        }
+                        // OptionValidityPeriod (inside ContractExtension)
+                        if (inContractExtension && NS_CAC.equals(ns) && "OptionValidityPeriod".equals(local)) {
+                            inOptionValidityPeriod = true;
                         }
                         // LocatedContractingParty
                         if (NS_CAC_PLACE.equals(ns) && "LocatedContractingParty".equals(local)) {
@@ -149,6 +204,37 @@ public class AtomParser {
                         if (inTenderingProcess && NS_CAC.equals(ns) && "TenderSubmissionDeadlinePeriod".equals(local)) {
                             inDeadlinePeriod = true;
                         }
+                        // TenderingTerms
+                        if (NS_CAC.equals(ns) && "TenderingTerms".equals(local)) {
+                            inTenderingTerms = true;
+                        }
+                        // AwardingTerms > AwardingCriteria
+                        if (inTenderingTerms && NS_CAC.equals(ns) && "AwardingTerms".equals(local)) {
+                            inAwardingTerms = true;
+                        }
+                        if (inAwardingTerms && NS_CAC.equals(ns) && "AwardingCriteria".equals(local)) {
+                            inAwardingCriteria = true;
+                            criterioTipo = null;
+                            criterioDescripcion = null;
+                            criterioPeso = null;
+                        }
+                        // TendererQualificationRequest
+                        if (inTenderingTerms && NS_CAC.equals(ns) && "TendererQualificationRequest".equals(local)) {
+                            inTendererQualification = true;
+                        }
+                        if (inTendererQualification && NS_CAC.equals(ns) && "TechnicalEvaluationCriteria".equals(local)) {
+                            inTechnicalEvaluation = true;
+                        }
+                        if (inTendererQualification && NS_CAC.equals(ns) && "FinancialEvaluationCriteria".equals(local)) {
+                            inFinancialEvaluation = true;
+                        }
+                        // ProcurementProjectLot
+                        if (NS_CAC.equals(ns) && "ProcurementProjectLot".equals(local)) {
+                            inProcurementProjectLot = true;
+                            loteId = null;
+                            loteObjeto = null;
+                            loteImporte = null;
+                        }
                         // LegalDocumentReference (PCAP)
                         if (NS_CAC.equals(ns) && "LegalDocumentReference".equals(local)) {
                             inLegalDocRef = true;
@@ -163,6 +249,11 @@ public class AtomParser {
                         }
                         if (inAttachment && NS_CAC.equals(ns) && "ExternalReference".equals(local)) {
                             inExternalRef = true;
+                        }
+
+                        // DurationMeasure — capture unitCode attribute
+                        if (inPlannedPeriod && NS_CBC.equals(ns) && "DurationMeasure".equals(local)) {
+                            durationUnitCode = reader.getAttributeValue(null, "unitCode");
                         }
                     }
 
@@ -193,20 +284,22 @@ public class AtomParser {
                             }
 
                             // ContractFolderID
-                            if (NS_CBC.equals(ns) && "ContractFolderID".equals(local) && !inProcurementProject) {
+                            if (NS_CBC.equals(ns) && "ContractFolderID".equals(local) && !inProcurementProject && !inLotProcurementProject) {
                                 current.setExpediente(text);
                             }
 
-                            // ProcurementProject fields
-                            if (inProcurementProject) {
-                                // Name (objeto) — only direct child of ProcurementProject
+                            // ProcurementProject fields (main, not lot)
+                            if (inProcurementProject && !inProcurementProjectLot) {
+                                // Name (objeto)
                                 if (NS_CBC.equals(ns) && "Name".equals(local)
-                                        && !inBudgetAmount && !inRealizedLocation && !inCommodityClassification) {
+                                        && !inBudgetAmount && !inRealizedLocation && !inCommodityClassification
+                                        && !inPlannedPeriod && !inContractExtension) {
                                     current.setObjeto(text);
                                 }
 
                                 // TypeCode (tipoContrato)
-                                if (NS_CBC.equals(ns) && "TypeCode".equals(local)) {
+                                if (NS_CBC.equals(ns) && "TypeCode".equals(local)
+                                        && !inBudgetAmount && !inRealizedLocation && !inCommodityClassification) {
                                     current.setTipoContrato(text);
                                 }
 
@@ -233,6 +326,40 @@ public class AtomParser {
                                     if (NS_CBC.equals(ns) && "CountrySubentity".equals(local)) {
                                         current.setLugarEjecucion(text);
                                     }
+                                }
+
+                                // PlannedPeriod (duración)
+                                if (inPlannedPeriod) {
+                                    if (NS_CBC.equals(ns) && "DurationMeasure".equals(local)) {
+                                        current.setDuracionMedida(text);
+                                        current.setDuracionUnidad(durationUnitCode);
+                                        durationUnitCode = null;
+                                    }
+                                    if (NS_CBC.equals(ns) && "StartDate".equals(local)) {
+                                        current.setDuracionInicio(parseDate(text));
+                                    }
+                                    if (NS_CBC.equals(ns) && "EndDate".equals(local)) {
+                                        current.setDuracionFin(parseDate(text));
+                                    }
+                                }
+
+                                // ContractExtension > OptionValidityPeriod > Description (prórroga)
+                                if (inOptionValidityPeriod && NS_CBC.equals(ns) && "Description".equals(local)) {
+                                    current.setProrroga(text);
+                                }
+                            }
+
+                            // Lot fields
+                            if (inProcurementProjectLot) {
+                                if (NS_CBC.equals(ns) && "ProcurementProjectLotID".equals(local)) {
+                                    loteId = text;
+                                }
+                                if (inLotProcurementProject && NS_CBC.equals(ns) && "Name".equals(local)
+                                        && !inLotBudgetAmount) {
+                                    loteObjeto = text;
+                                }
+                                if (inLotBudgetAmount && NS_CBC.equals(ns) && "TaxExclusiveAmount".equals(local)) {
+                                    loteImporte = text;
                                 }
                             }
 
@@ -262,6 +389,9 @@ public class AtomParser {
                                 if (NS_CBC.equals(ns) && "ProcedureCode".equals(local)) {
                                     current.setTipoProcedimiento(text);
                                 }
+                                if (NS_CBC.equals(ns) && "UrgencyCode".equals(local)) {
+                                    current.setUrgencia(text);
+                                }
                                 if (inDeadlinePeriod) {
                                     if (NS_CBC.equals(ns) && "EndDate".equals(local)) {
                                         current.setFechaLimiteOfertas(parseDate(text));
@@ -271,19 +401,88 @@ public class AtomParser {
                                     }
                                 }
                             }
+
+                            // AwardingCriteria fields
+                            if (inAwardingCriteria) {
+                                if (NS_CBC.equals(ns) && "AwardingCriteriaTypeCode".equals(local)) {
+                                    criterioTipo = text;
+                                }
+                                if (NS_CBC.equals(ns) && "Description".equals(local)) {
+                                    criterioDescripcion = text;
+                                }
+                                if (NS_CBC.equals(ns) && "WeightNumeric".equals(local)) {
+                                    criterioPeso = text;
+                                }
+                            }
+
+                            // Solvencia técnica
+                            if (inTechnicalEvaluation && NS_CBC.equals(ns) && "Description".equals(local)) {
+                                if (!text.isEmpty()) {
+                                    if (solvTecBuilder.length() > 0) solvTecBuilder.append(" | ");
+                                    solvTecBuilder.append(text);
+                                }
+                            }
+
+                            // Solvencia económica
+                            if (inFinancialEvaluation && NS_CBC.equals(ns) && "Description".equals(local)) {
+                                if (!text.isEmpty()) {
+                                    if (solvEcoBuilder.length() > 0) solvEcoBuilder.append(" | ");
+                                    solvEcoBuilder.append(text);
+                                }
+                            }
                         }
 
-                        // Close context flags
-                        if (NS_CAC.equals(ns) && "BudgetAmount".equals(local)) inBudgetAmount = false;
+                        // Close context flags — order matters: close inner before outer
+                        if (NS_CAC.equals(ns) && "BudgetAmount".equals(local)) {
+                            inBudgetAmount = false;
+                            inLotBudgetAmount = false;
+                        }
                         if (NS_CAC.equals(ns) && "RequiredCommodityClassification".equals(local)) inCommodityClassification = false;
                         if (NS_CAC.equals(ns) && "RealizedLocation".equals(local)) inRealizedLocation = false;
+                        if (NS_CAC.equals(ns) && "PlannedPeriod".equals(local)) inPlannedPeriod = false;
+                        if (NS_CAC.equals(ns) && "OptionValidityPeriod".equals(local)) inOptionValidityPeriod = false;
+                        if (NS_CAC.equals(ns) && "ContractExtension".equals(local)) inContractExtension = false;
                         if (NS_CAC.equals(ns) && "PartyName".equals(local)) inPartyName = false;
                         if (NS_CAC.equals(ns) && "PartyIdentification".equals(local)) inPartyIdentification = false;
                         if (NS_CAC.equals(ns) && "Party".equals(local) && inLocatedContractingParty) inParty = false;
                         if (NS_CAC_PLACE.equals(ns) && "LocatedContractingParty".equals(local)) inLocatedContractingParty = false;
                         if (NS_CAC.equals(ns) && "TenderSubmissionDeadlinePeriod".equals(local)) inDeadlinePeriod = false;
                         if (NS_CAC.equals(ns) && "TenderingProcess".equals(local)) inTenderingProcess = false;
-                        if (NS_CAC.equals(ns) && "ProcurementProject".equals(local)) inProcurementProject = false;
+
+                        // Close AwardingCriteria — serialize to JSON
+                        if (inAwardingCriteria && NS_CAC.equals(ns) && "AwardingCriteria".equals(local)) {
+                            if (criteriosBuilder.length() > 1) criteriosBuilder.append(",");
+                            criteriosBuilder.append("{\"tipo\":\"").append(jsonEscape(criterioTipo))
+                                    .append("\",\"descripcion\":\"").append(jsonEscape(criterioDescripcion))
+                                    .append("\",\"peso\":").append(criterioPeso != null ? criterioPeso : "null")
+                                    .append("}");
+                            inAwardingCriteria = false;
+                        }
+                        if (NS_CAC.equals(ns) && "AwardingTerms".equals(local)) inAwardingTerms = false;
+                        if (NS_CAC.equals(ns) && "TechnicalEvaluationCriteria".equals(local)) inTechnicalEvaluation = false;
+                        if (NS_CAC.equals(ns) && "FinancialEvaluationCriteria".equals(local)) inFinancialEvaluation = false;
+                        if (NS_CAC.equals(ns) && "TendererQualificationRequest".equals(local)) inTendererQualification = false;
+                        if (NS_CAC.equals(ns) && "TenderingTerms".equals(local)) inTenderingTerms = false;
+
+                        // Close ProcurementProjectLot — serialize lot to JSON
+                        if (inProcurementProjectLot && NS_CAC.equals(ns) && "ProcurementProjectLot".equals(local)) {
+                            if (lotesBuilder.length() > 1) lotesBuilder.append(",");
+                            lotesBuilder.append("{\"id\":\"").append(jsonEscape(loteId))
+                                    .append("\",\"objeto\":\"").append(jsonEscape(loteObjeto))
+                                    .append("\",\"importe\":").append(loteImporte != null ? loteImporte : "null")
+                                    .append("}");
+                            inProcurementProjectLot = false;
+                            inLotProcurementProject = false;
+                            inLotBudgetAmount = false;
+                        }
+
+                        if (NS_CAC.equals(ns) && "ProcurementProject".equals(local)) {
+                            if (inLotProcurementProject) {
+                                inLotProcurementProject = false;
+                            } else {
+                                inProcurementProject = false;
+                            }
+                        }
                         if (NS_CAC.equals(ns) && "ExternalReference".equals(local)) inExternalRef = false;
                         if (NS_CAC.equals(ns) && "Attachment".equals(local)) inAttachment = false;
                         if (NS_CAC.equals(ns) && "LegalDocumentReference".equals(local)) { inLegalDocRef = false; inAttachment = false; inExternalRef = false; }
@@ -296,10 +495,35 @@ public class AtomParser {
                             if (!cpvResult.isEmpty()) {
                                 current.setCpvCodes(cpvResult);
                             }
+
+                            // Finalize JSON arrays
+                            criteriosBuilder.append("]");
+                            String criteriosJson = criteriosBuilder.toString();
+                            if (!"[]".equals(criteriosJson)) {
+                                current.setCriteriosAdjudicacion(criteriosJson);
+                            }
+
+                            lotesBuilder.append("]");
+                            String lotesJson = lotesBuilder.toString();
+                            if (!"[]".equals(lotesJson)) {
+                                current.setLotes(lotesJson);
+                            }
+
+                            if (solvTecBuilder.length() > 0) {
+                                current.setSolvenciaTecnica(solvTecBuilder.toString());
+                            }
+                            if (solvEcoBuilder.length() > 0) {
+                                current.setSolvenciaEconomica(solvEcoBuilder.toString());
+                            }
+
                             current.setFechaIngesta(LocalDateTime.now());
                             licitaciones.add(current);
                             current = null;
                             cpvJoiner = null;
+                            criteriosBuilder = null;
+                            lotesBuilder = null;
+                            solvTecBuilder = null;
+                            solvEcoBuilder = null;
                             inEntry = false;
                         }
                     }
@@ -316,6 +540,15 @@ public class AtomParser {
 
         log.info("Parseadas {} licitaciones, {} deleted-entries", licitaciones.size(), deletedRefs.size());
         return new ParseResult(licitaciones, deletedRefs);
+    }
+
+    private static String jsonEscape(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\t", "\\t");
     }
 
     private static LocalDateTime parseDateTime(String text) {

@@ -109,22 +109,25 @@ function ResultsTable({ resultados, loading, onPageChange, sort, onSortChange, o
               <td className={`col-plazo ${plazoClass(lic.fechaLimiteOfertas)}`}>{formatFechaHora(lic.fechaLimiteOfertas, lic.horaLimiteOfertas)}</td>
               <td className="col-titulo">
                 <span className="organo">{lic.organoContratacion}</span>
-                {lic.enlacePlacsp ? (
-                  <a href={lic.enlacePlacsp} target="_blank" rel="noopener noreferrer">
-                    {lic.objeto}
-                  </a>
-                ) : (
-                  <span>{lic.objeto}</span>
-                )}
+                <span className="titulo-objeto">
+                  {lic.objeto}
+                  {lic.enlacePlacsp && (
+                    <a href={lic.enlacePlacsp} target="_blank" rel="noopener noreferrer"
+                       className="titulo-link-placsp" title="Ver en Plataforma de Contratación"
+                       onClick={(e) => e.stopPropagation()}>
+                      &#x2197;
+                    </a>
+                  )}
+                </span>
               </td>
-              <td className="col-cpv" onClick={(e) => e.stopPropagation()}>
+              <td className="col-cpv">
                 <CpvBadges cpvCodes={lic.cpvCodes} cpvPrefix={cpvPrefix} />
               </td>
               <td className="col-ccaa">{lic.lugarEjecucion || '—'}</td>
-              <td className="col-pliegos" onClick={(e) => e.stopPropagation()}>
-                {lic.urlPcap && <a href={lic.urlPcap} target="_blank" rel="noopener noreferrer" title="Pliego cláusulas administrativas">PCAP</a>}
+              <td className="col-pliegos">
+                {lic.urlPcap && <a href={lic.urlPcap} target="_blank" rel="noopener noreferrer" title="Pliego cláusulas administrativas" onClick={(e) => e.stopPropagation()}>PCAP</a>}
                 {lic.urlPcap && lic.urlPpt && ' | '}
-                {lic.urlPpt && <a href={lic.urlPpt} target="_blank" rel="noopener noreferrer" title="Pliego prescripciones técnicas">PPT</a>}
+                {lic.urlPpt && <a href={lic.urlPpt} target="_blank" rel="noopener noreferrer" title="Pliego prescripciones técnicas" onClick={(e) => e.stopPropagation()}>PPT</a>}
                 {!lic.urlPcap && !lic.urlPpt && '—'}
               </td>
               <td className="col-importe">{formatImporte(lic.importeSinImpuestos)}</td>

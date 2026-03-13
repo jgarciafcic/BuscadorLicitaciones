@@ -33,6 +33,11 @@
   color: #fff;
 }
 
+.toast-warning {
+  background: #e65100;
+  color: #fff;
+}
+
 .toast-close {
   background: none;
   border: none;

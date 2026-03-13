@@ -86,18 +86,30 @@ td.plazo-proximo {
 
 .col-titulo .organo {
   display: block;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: #6c757d;
-  margin-bottom: 0.15rem;
+  margin-bottom: 0.1rem;
 }
 
-.col-titulo a {
+.col-titulo .titulo-objeto {
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: #212529;
+}
+
+.titulo-link-placsp {
+  display: inline-block;
+  margin-left: 0.3rem;
   color: #0066cc;
   text-decoration: none;
+  font-size: 0.75rem;
+  vertical-align: middle;
+  opacity: 0.5;
+  transition: opacity 0.15s;
 }
 
-.col-titulo a:hover {
-  text-decoration: underline;
+.titulo-link-placsp:hover {
+  opacity: 1;
 }
 
 .col-cpv {

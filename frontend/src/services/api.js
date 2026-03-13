@@ -59,6 +59,14 @@ export async function ejecutarIngesta(pages = 1, fromUrl = null) {
   return response.json();
 }
 
+export async function fetchIngestaEstado() {
+  const response = await fetch('/api/ingesta/estado');
+  if (!response.ok) {
+    throw new Error(`Error ${response.status}: ${response.statusText}`);
+  }
+  return response.json();
+}
+
 export function getExportUrl(filtros = {}) {
   const query = buildParams(filtros);
   return `/api/licitaciones/export?${query}`;

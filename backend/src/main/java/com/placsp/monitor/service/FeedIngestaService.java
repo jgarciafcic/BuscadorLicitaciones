@@ -35,6 +35,7 @@ public class FeedIngestaService {
 
     public record IngestaResumen(int paginasProcesadas, int entriesLeidas,
                                  int nuevas, int actualizadas, int eliminadas,
+                                 int yaExistentes, boolean solapaConBbdd,
                                  String nextPageUrl) {}
 
     @Transactional
@@ -100,6 +101,7 @@ public class FeedIngestaService {
 
         int nuevas = 0;
         int actualizadas = 0;
+        int yaExistentes = 0;
         List<Licitacion> toSave = new ArrayList<>();
 
         for (Licitacion lic : deduped.values()) {
@@ -108,14 +110,21 @@ public class FeedIngestaService {
                 nuevas++;
                 toSave.add(lic);
             } else {
-                if (existente.getFechaActualizacion() == null
+                boolean isNewer = existente.getFechaActualizacion() == null
                         || (lic.getFechaActualizacion() != null
-                            && lic.getFechaActualizacion().isAfter(existente.getFechaActualizacion()))) {
+                            && lic.getFechaActualizacion().isAfter(existente.getFechaActualizacion()));
+                boolean missingNewFields = existente.getCriteriosAdjudicacion() == null
+                        && lic.getCriteriosAdjudicacion() != null;
+                if (isNewer || missingNewFields) {
                     actualizadas++;
                     toSave.add(lic);
+                } else {
+                    yaExistentes++;
                 }
             }
         }
+
+        boolean solapaConBbdd = yaExistentes > 0 || actualizadas > 0;
 
         if (!toSave.isEmpty()) {
             repository.saveAll(toSave);
@@ -133,8 +142,8 @@ public class FeedIngestaService {
             }
         }
 
-        IngestaResumen resumen = new IngestaResumen(paginasProcesadas, entriesLeidas, nuevas, actualizadas, eliminadas, url);
-        log.info("Ingesta completada: {}", resumen);
+        IngestaResumen resumen = new IngestaResumen(paginasProcesadas, entriesLeidas, nuevas, actualizadas, eliminadas, yaExistentes, solapaConBbdd, url);
+        log.info("Ingesta completada: {} (solapa con BBDD: {})", resumen, solapaConBbdd);
         return resumen;
     }
 

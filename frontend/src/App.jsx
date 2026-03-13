@@ -1,6 +1,6 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useLicitaciones } from './hooks/useLicitaciones';
-import { ejecutarIngesta } from './services/api';
+import { ejecutarIngesta, fetchIngestaEstado } from './services/api';
 import SearchFilters from './components/SearchFilters';
 import ResultsSummary from './components/ResultsSummary';
 import ResultsTable from './components/ResultsTable';
@@ -16,8 +16,32 @@ function App() {
   const [showManual, setShowManual] = useState(false);
   const [toast, setToast] = useState(null);
   const [ingesting, setIngesting] = useState(false);
+  const [initialIngesting, setInitialIngesting] = useState(false);
   const [nextFeedUrl, setNextFeedUrl] = useState(null);
   const [paginasCargadas, setPaginasCargadas] = useState(0);
+  const pollingRef = useRef(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const checkEstado = async () => {
+      try {
+        const estado = await fetchIngestaEstado();
+        if (cancelled) return;
+        if (estado.ingesting) {
+          setInitialIngesting(true);
+          pollingRef.current = setTimeout(checkEstado, 3000);
+        } else if (initialIngesting) {
+          setInitialIngesting(false);
+          buscar(0);
+        }
+      } catch {
+        // backend not ready yet, retry
+        if (!cancelled) pollingRef.current = setTimeout(checkEstado, 3000);
+      }
+    };
+    checkEstado();
+    return () => { cancelled = true; clearTimeout(pollingRef.current); };
+  }, [initialIngesting, buscar]);
 
   const handleCantabria = useCallback(() => {
     const cantabriaFiltros = {
@@ -34,16 +58,19 @@ function App() {
   const handleIngesta = useCallback(async (fromUrl = null) => {
     setIngesting(true);
     const isLoadMore = fromUrl !== null;
-    setToast({ message: isLoadMore ? 'Cargando siguiente página del feed...' : 'Cargando primera página del feed...', type: 'info' });
+    setToast({ message: isLoadMore ? 'Cargando siguientes páginas del feed...' : 'Cargando páginas del feed...', type: 'info' });
     try {
-      const resumen = await ejecutarIngesta(1, fromUrl);
+      const resumen = await ejecutarIngesta(5, fromUrl);
       const newTotal = isLoadMore ? paginasCargadas + resumen.paginasProcesadas : resumen.paginasProcesadas;
       setPaginasCargadas(newTotal);
       setNextFeedUrl(resumen.nextPageUrl || null);
+      const solapaMsg = resumen.solapaConBbdd
+        ? ` — Alcanzadas licitaciones ya cargadas (${resumen.yaExistentes} sin cambios)`
+        : ' — No se alcanzaron licitaciones previas, puede haber huecos';
       setToast({
-        message: `Página ${newTotal} cargada: ${resumen.nuevas} nuevas, ${resumen.actualizadas} actualizadas` +
+        message: `${resumen.paginasProcesadas} págs. cargadas: ${resumen.nuevas} nuevas, ${resumen.actualizadas} actualizadas${solapaMsg}` +
           (resumen.nextPageUrl ? '' : ' (no hay más páginas)'),
-        type: 'success',
+        type: resumen.solapaConBbdd ? 'success' : 'warning',
       });
       buscar(0);
     } catch (err) {
@@ -78,7 +105,7 @@ function App() {
         <ResultsSummary stats={stats} loading={loading} filtros={filtros} />
         {error && <div className="error-msg">Error: {error}</div>}
         <ResultsTable resultados={resultados} loading={loading} onPageChange={buscar} sort={sort} onSortChange={cambiarSort} onRowClick={setSeleccionada} cpvPrefix={filtros.cpv} />
-        {(loading || ingesting) && <LoadingSpinner />}
+        {(loading || ingesting || initialIngesting) && <LoadingSpinner />}
       </main>
       <LicitacionDetail licitacion={seleccionada} onClose={() => setSeleccionada(null)} />
       {showManual && <UserManual onClose={() => setShowManual(false)} />}

@@ -22,6 +22,32 @@ const ESTADOS = {
   'ADJ': 'Adjudicada', 'RES': 'Resuelta', 'ANU': 'Anulada',
 };
 
+const URGENCIAS = { '1': 'Ordinaria', '2': 'Urgente' };
+
+const UNIDADES_DURACION = { 'DAY': 'días', 'MON': 'meses', 'ANN': 'años' };
+
+function formatDuracion(medida, unidad, inicio, fin) {
+  const partes = [];
+  if (medida && unidad) {
+    partes.push(`${medida} ${UNIDADES_DURACION[unidad] || unidad}`);
+  }
+  if (inicio || fin) {
+    const rango = [inicio ? formatFecha(inicio) : '?', fin ? formatFecha(fin) : '?'].join(' — ');
+    partes.push(`(${rango})`);
+  }
+  return partes.length > 0 ? partes.join(' ') : null;
+}
+
+function parseCriterios(json) {
+  if (!json) return null;
+  try { return JSON.parse(json); } catch { return null; }
+}
+
+function parseLotes(json) {
+  if (!json) return null;
+  try { return JSON.parse(json); } catch { return null; }
+}
+
 function formatImporte(valor) {
   if (valor == null) return '—';
   return new Intl.NumberFormat('es-ES', {
@@ -181,7 +207,91 @@ function LicitacionDetail({ licitacion, onClose }) {
               {lic.urlPpt && <a href={lic.urlPpt} target="_blank" rel="noopener noreferrer">PPT</a>}
               {!tienePliegos && '—'}
             </dd>
+
+            {formatDuracion(lic.duracionMedida, lic.duracionUnidad, lic.duracionInicio, lic.duracionFin) && <>
+              <dt>Duración</dt>
+              <dd>{formatDuracion(lic.duracionMedida, lic.duracionUnidad, lic.duracionInicio, lic.duracionFin)}</dd>
+            </>}
+
+            {lic.prorroga && <>
+              <dt>Prórroga</dt>
+              <dd className="detail-prorroga">{lic.prorroga}</dd>
+            </>}
+
+            {lic.urgencia && <>
+              <dt>Urgencia</dt>
+              <dd>{lic.urgencia === '2'
+                ? <span className="badge-urgente">Urgente</span>
+                : URGENCIAS[lic.urgencia] || lic.urgencia}</dd>
+            </>}
           </dl>
+
+          {/* Criterios de adjudicación */}
+          {(() => {
+            const criterios = parseCriterios(lic.criteriosAdjudicacion);
+            if (!criterios || criterios.length === 0) return null;
+            return (
+              <div className="detail-section">
+                <h3>Criterios de adjudicación</h3>
+                <table className="detail-table">
+                  <thead>
+                    <tr><th>Tipo</th><th>Descripción</th><th>Peso</th></tr>
+                  </thead>
+                  <tbody>
+                    {criterios.map((c, i) => (
+                      <tr key={i}>
+                        <td>{c.tipo === 'OBJ' ? 'Objetivo' : c.tipo === 'SUBJ' ? 'Subjetivo' : c.tipo}</td>
+                        <td>{c.descripcion}</td>
+                        <td className="detail-peso">{c.peso != null ? `${c.peso}%` : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
+
+          {/* Lotes */}
+          {(() => {
+            const lotes = parseLotes(lic.lotes);
+            if (!lotes || lotes.length === 0) return null;
+            return (
+              <div className="detail-section">
+                <h3>Lotes ({lotes.length})</h3>
+                <table className="detail-table">
+                  <thead>
+                    <tr><th>Lote</th><th>Objeto</th><th>Importe</th></tr>
+                  </thead>
+                  <tbody>
+                    {lotes.map((l, i) => (
+                      <tr key={i}>
+                        <td>{l.id || i + 1}</td>
+                        <td>{l.objeto || '—'}</td>
+                        <td className="detail-importe">{l.importe != null ? formatImporte(l.importe) : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
+
+          {/* Solvencia */}
+          {(lic.solvenciaTecnica || lic.solvenciaEconomica) && (
+            <div className="detail-section">
+              <h3>Requisitos de solvencia</h3>
+              {lic.solvenciaTecnica && (
+                <div className="detail-solvencia">
+                  <strong>Técnica:</strong> {lic.solvenciaTecnica}
+                </div>
+              )}
+              {lic.solvenciaEconomica && (
+                <div className="detail-solvencia">
+                  <strong>Económica:</strong> {lic.solvenciaEconomica}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Botón de análisis */}
           {tienePliegos && !analisis && !analizando && (

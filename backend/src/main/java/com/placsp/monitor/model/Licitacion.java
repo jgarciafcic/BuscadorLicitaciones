@@ -3,6 +3,7 @@ package com.placsp.monitor.model;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Lob;
 import jakarta.persistence.Table;
 
 import java.math.BigDecimal;
@@ -62,6 +63,34 @@ public class Licitacion {
     private LocalDateTime fechaActualizacion;
 
     private LocalDateTime fechaIngesta;
+
+    // Duración del contrato
+    private String duracionMedida;       // ej. "4"
+    private String duracionUnidad;       // DAY, MON, ANN
+    private LocalDate duracionInicio;
+    private LocalDate duracionFin;
+
+    // Urgencia
+    private String urgencia;             // 1=Ordinaria, 2=Urgente
+
+    // Prórroga
+    @Lob
+    private String prorroga;
+
+    // Lotes
+    @Lob
+    private String lotes;                // JSON array con info de lotes
+
+    // Criterios de adjudicación
+    @Lob
+    private String criteriosAdjudicacion; // JSON array
+
+    // Solvencia
+    @Lob
+    private String solvenciaTecnica;
+
+    @Lob
+    private String solvenciaEconomica;
 
     public Licitacion() {
     }
@@ -225,6 +254,36 @@ public class Licitacion {
     public void setFechaIngesta(LocalDateTime fechaIngesta) {
         this.fechaIngesta = fechaIngesta;
     }
+
+    public String getDuracionMedida() { return duracionMedida; }
+    public void setDuracionMedida(String duracionMedida) { this.duracionMedida = duracionMedida; }
+
+    public String getDuracionUnidad() { return duracionUnidad; }
+    public void setDuracionUnidad(String duracionUnidad) { this.duracionUnidad = duracionUnidad; }
+
+    public LocalDate getDuracionInicio() { return duracionInicio; }
+    public void setDuracionInicio(LocalDate duracionInicio) { this.duracionInicio = duracionInicio; }
+
+    public LocalDate getDuracionFin() { return duracionFin; }
+    public void setDuracionFin(LocalDate duracionFin) { this.duracionFin = duracionFin; }
+
+    public String getUrgencia() { return urgencia; }
+    public void setUrgencia(String urgencia) { this.urgencia = urgencia; }
+
+    public String getProrroga() { return prorroga; }
+    public void setProrroga(String prorroga) { this.prorroga = prorroga; }
+
+    public String getLotes() { return lotes; }
+    public void setLotes(String lotes) { this.lotes = lotes; }
+
+    public String getCriteriosAdjudicacion() { return criteriosAdjudicacion; }
+    public void setCriteriosAdjudicacion(String criteriosAdjudicacion) { this.criteriosAdjudicacion = criteriosAdjudicacion; }
+
+    public String getSolvenciaTecnica() { return solvenciaTecnica; }
+    public void setSolvenciaTecnica(String solvenciaTecnica) { this.solvenciaTecnica = solvenciaTecnica; }
+
+    public String getSolvenciaEconomica() { return solvenciaEconomica; }
+    public void setSolvenciaEconomica(String solvenciaEconomica) { this.solvenciaEconomica = solvenciaEconomica; }
 
     @Override
     public String toString() {

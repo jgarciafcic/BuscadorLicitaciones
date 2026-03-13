@@ -10,18 +10,25 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 @Component
 public class IngestaScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(IngestaScheduler.class);
-    private static final int INITIAL_PAGES = 3;
+    private static final int INITIAL_PAGES = 5;
 
     private final FeedIngestaService feedIngestaService;
     private final LicitacionRepository repository;
+    private final AtomicBoolean ingesting = new AtomicBoolean(false);
 
     public IngestaScheduler(FeedIngestaService feedIngestaService, LicitacionRepository repository) {
         this.feedIngestaService = feedIngestaService;
         this.repository = repository;
+    }
+
+    public boolean isIngesting() {
+        return ingesting.get();
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -32,12 +39,15 @@ public class IngestaScheduler {
             return;
         }
         log.info("Base de datos vacía, lanzando ingesta inicial de {} páginas", INITIAL_PAGES);
+        ingesting.set(true);
         try {
             var resumen = feedIngestaService.ejecutar(INITIAL_PAGES, null);
             log.info("Ingesta inicial completada: {} nuevas, {} actualizadas, {} eliminadas",
                     resumen.nuevas(), resumen.actualizadas(), resumen.eliminadas());
         } catch (Exception e) {
             log.error("Error en ingesta inicial: {}", e.getMessage(), e);
+        } finally {
+            ingesting.set(false);
         }
     }
 

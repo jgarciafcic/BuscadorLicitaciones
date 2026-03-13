@@ -27,7 +27,17 @@ public record LicitacionDto(
         String urlPcap,
         String urlPpt,
         LocalDateTime fechaActualizacion,
-        LocalDateTime fechaIngesta
+        LocalDateTime fechaIngesta,
+        String duracionMedida,
+        String duracionUnidad,
+        LocalDate duracionInicio,
+        LocalDate duracionFin,
+        String urgencia,
+        String prorroga,
+        String lotes,
+        String criteriosAdjudicacion,
+        String solvenciaTecnica,
+        String solvenciaEconomica
 ) {
 
     public static LicitacionDto fromEntity(Licitacion entity) {
@@ -51,7 +61,17 @@ public record LicitacionDto(
                 entity.getUrlPcap(),
                 entity.getUrlPpt(),
                 entity.getFechaActualizacion(),
-                entity.getFechaIngesta()
+                entity.getFechaIngesta(),
+                entity.getDuracionMedida(),
+                entity.getDuracionUnidad(),
+                entity.getDuracionInicio(),
+                entity.getDuracionFin(),
+                entity.getUrgencia(),
+                entity.getProrroga(),
+                entity.getLotes(),
+                entity.getCriteriosAdjudicacion(),
+                entity.getSolvenciaTecnica(),
+                entity.getSolvenciaEconomica()
         );
     }
 }
