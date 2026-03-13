@@ -64,11 +64,11 @@ function App() {
           <button className="btn-manual" onClick={() => setShowManual(true)} title="Manual de uso">?</button>
           <button className="btn-cantabria" onClick={handleCantabria}>Licitaciones Cantabria</button>
           <button className="btn-ingesta" onClick={() => { setNextFeedUrl(null); setPaginasCargadas(0); handleIngesta(null); }} disabled={ingesting}>
-            {ingesting ? 'Cargando...' : 'Cargar feed'}
+            {ingesting ? 'Cargando...' : 'Cargar de origen'}
           </button>
           {nextFeedUrl && (
             <button className="btn-ingesta btn-load-more" onClick={() => handleIngesta(nextFeedUrl)} disabled={ingesting}>
-              {ingesting ? 'Cargando...' : `Cargar más (pág. ${paginasCargadas + 1})`}
+              {ingesting ? 'Cargando...' : 'Cargar +'}
             </button>
           )}
         </div>

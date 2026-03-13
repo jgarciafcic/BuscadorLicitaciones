@@ -23,9 +23,16 @@ public final class LicitacionSpecification {
         return (root, query, cb) -> cb.equal(root.get("tipoContrato"), tipoContrato);
     }
 
+    /**
+     * Filtra licitaciones donde AL MENOS UN código CPV empieza por el prefijo.
+     * Como cpvCodes es un string separado por comas, buscamos al inicio o tras coma.
+     */
     public static Specification<Licitacion> byCpvPrefix(String cpv) {
         if (cpv == null || cpv.isBlank()) return null;
-        return (root, query, cb) -> cb.like(root.get("cpvCodes"), cpv + "%");
+        return (root, query, cb) -> cb.or(
+                cb.like(root.get("cpvCodes"), cpv + "%"),
+                cb.like(root.get("cpvCodes"), "%," + cpv + "%")
+        );
     }
 
     public static Specification<Licitacion> byTexto(String texto) {

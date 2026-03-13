@@ -26,11 +26,11 @@ function UserManual({ onClose }) {
             </p>
             <ul>
               <li>
-                <strong>Cargar feed</strong> &mdash; Descarga la primera p&aacute;gina del feed
+                <strong>Cargar de origen</strong> &mdash; Descarga la primera p&aacute;gina del feed
                 (las licitaciones m&aacute;s recientes, hasta 500 por p&aacute;gina).
               </li>
               <li>
-                <strong>Cargar m&aacute;s</strong> &mdash; Tras la primera carga, aparece este
+                <strong>Cargar +</strong> &mdash; Tras la primera carga, aparece este
                 bot&oacute;n para seguir descargando p&aacute;ginas anteriores e ir ampliando
                 la base de datos.
               </li>
@@ -109,7 +109,7 @@ function UserManual({ onClose }) {
                 </tr>
               </tbody>
             </table>
-            <p>Pulse <strong>&laquo;Buscar licitaciones&raquo;</strong> para aplicar los filtros.</p>
+            <p>Pulse <strong>&laquo;Filtrar cargadas&raquo;</strong> para aplicar los filtros sobre las licitaciones ya descargadas.</p>
           </section>
 
           <section>

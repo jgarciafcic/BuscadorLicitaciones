@@ -191,7 +191,7 @@ function SearchFilters({ filtros, setFiltros, onBuscar }) {
         <button type="button" className="btn-toggle" onClick={() => setMostrarMas(!mostrarMas)}>
           {mostrarMas ? 'Ver menos filtros' : 'Ver más filtros'}
         </button>
-        <button type="submit" className="btn-buscar">Buscar licitaciones</button>
+        <button type="submit" className="btn-buscar">Filtrar cargadas</button>
       </div>
     </form>
   );
