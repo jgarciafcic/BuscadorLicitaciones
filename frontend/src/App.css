@@ -113,3 +113,51 @@
   font-size: 0.875rem;
   margin-bottom: 1rem;
 }
+
+/* ============================
+   Responsive
+   ============================ */
+
+@media (max-width: 768px) {
+  .app {
+    padding: 0.5rem 0.75rem 1rem;
+  }
+
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .header-brand {
+    gap: 0.5rem;
+  }
+
+  .header-logo {
+    height: 28px;
+  }
+
+  .app-header h1 {
+    font-size: 1rem;
+  }
+
+  .header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .btn-cantabria,
+  .btn-ingesta {
+    font-size: 0.72rem;
+    padding: 0.35rem 0.6rem;
+    flex: 1;
+    text-align: center;
+    min-width: 0;
+  }
+
+  .btn-manual {
+    width: 26px;
+    height: 26px;
+    font-size: 0.75rem;
+  }
+}
