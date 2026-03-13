@@ -126,7 +126,40 @@
   background: #7a8a00;
 }
 
+/* Collapsible mobile header */
+.filters-mobile-header {
+  display: none;
+}
+
 @media (max-width: 768px) {
+  .filters-mobile-header {
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  .btn-collapse {
+    background: none;
+    border: none;
+    color: #0066cc;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0.25rem 0;
+    text-decoration: underline;
+  }
+
+  .btn-collapse:hover {
+    color: #004999;
+  }
+
+  .filters-content.hidden {
+    display: none;
+  }
+
+  .filters-collapsed {
+    padding: 0.5rem 1rem;
+  }
+
   .filter-group {
     min-width: 100%;
   }
