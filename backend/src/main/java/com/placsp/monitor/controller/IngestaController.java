@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/ingesta")
+@CrossOrigin(origins = "*")
 @Tag(name = "Ingesta", description = "Gestión de la ingesta del feed ATOM de PLACSP")
 public class IngestaController {
 

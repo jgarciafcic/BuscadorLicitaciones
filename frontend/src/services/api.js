@@ -1,3 +1,9 @@
+// En producción (Netlify), las llamadas largas van directo a Railway para evitar
+// el timeout de 26s del proxy. En desarrollo, todo va al proxy de Vite.
+const BACKEND_DIRECT = import.meta.env.PROD
+  ? 'https://meticulous-prosperity-production.up.railway.app'
+  : '';
+
 const DEFAULT_FILTERS = {
   estado: 'PUB',
   tipoContrato: '2',
@@ -46,7 +52,7 @@ export async function fetchStats(filtros = {}) {
 export async function ejecutarIngesta(pages = 1, fromUrl = null) {
   const params = new URLSearchParams({ pages });
   if (fromUrl) params.append('fromUrl', fromUrl);
-  const response = await fetch(`/api/ingesta/ejecutar?${params}`, { method: 'POST' });
+  const response = await fetch(`${BACKEND_DIRECT}/api/ingesta/ejecutar?${params}`, { method: 'POST' });
   if (!response.ok) {
     throw new Error(`Error ${response.status}: ${response.statusText}`);
   }
@@ -59,7 +65,7 @@ export function getExportUrl(filtros = {}) {
 }
 
 export async function analizarPliegos(entryId) {
-  const response = await fetch(`/api/licitaciones/analizar-pliegos?entryId=${encodeURIComponent(entryId)}`, {
+  const response = await fetch(`${BACKEND_DIRECT}/api/licitaciones/analizar-pliegos?entryId=${encodeURIComponent(entryId)}`, {
     method: 'POST',
   });
   if (!response.ok) {
