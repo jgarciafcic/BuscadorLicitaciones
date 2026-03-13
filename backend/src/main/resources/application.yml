@@ -8,7 +8,7 @@ placsp:
   feed:
     url: https://contrataciondelsectorpublico.gob.es/sindicacion/sindicacion_643/licitacionesPerfilesContratanteCompleto3.atom
     max-pages: 50
-    cron: "0 0 7 * * *"
+    cron: "0 0 */8 * * *"
   llm:
     provider: ollama                # "ollama" o "claude"
     ollama-url: http://localhost:11434
