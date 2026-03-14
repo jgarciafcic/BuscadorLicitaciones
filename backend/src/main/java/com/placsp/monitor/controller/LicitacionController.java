@@ -110,9 +110,17 @@ public class LicitacionController {
                 importeMin, importeMax, nutsCode, procedimiento, diasPlazo);
     }
 
+    @GetMapping("/api-key-configured")
+    @Operation(summary = "Verificar API key", description = "Indica si el servidor tiene configurada una API key de Claude")
+    public java.util.Map<String, Boolean> apiKeyConfigured() {
+        return java.util.Map.of("configured", pliegoAnalysisService.isApiKeyConfigured());
+    }
+
     @PostMapping("/analizar-pliegos")
     @Operation(summary = "Analizar pliegos", description = "Descarga los pliegos PCAP y PPT, extrae el texto y genera un resumen con IA")
-    public PliegoAnalysisService.AnalisisResult analizarPliegos(@RequestParam String entryId) {
-        return pliegoAnalysisService.analizar(entryId);
+    public PliegoAnalysisService.AnalisisResult analizarPliegos(
+            @RequestParam String entryId,
+            @RequestParam(required = false) String apiKey) {
+        return pliegoAnalysisService.analizar(entryId, apiKey);
     }
 }

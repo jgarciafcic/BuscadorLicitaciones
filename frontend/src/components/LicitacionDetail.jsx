@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { analizarPliegos } from '../services/api';
+import { analizarPliegos, checkApiKeyConfigured } from '../services/api';
 import ConfirmModal from './ConfirmModal';
 import './LicitacionDetail.css';
 
@@ -72,6 +72,8 @@ function LicitacionDetail({ licitacion, onClose }) {
   const [analizando, setAnalizando] = useState(false);
   const [analisisError, setAnalisisError] = useState(null);
   const [confirmClose, setConfirmClose] = useState(false);
+  const [needsApiKey, setNeedsApiKey] = useState(null); // null=not checked, true/false
+  const [manualApiKey, setManualApiKey] = useState('');
   const analisisRef = useRef(null);
 
   const handleClose = useCallback(() => {
@@ -99,6 +101,8 @@ function LicitacionDetail({ licitacion, onClose }) {
     setAnalisis(null);
     setAnalisisError(null);
     setAnalizando(false);
+    setNeedsApiKey(null);
+    setManualApiKey('');
   }, [licitacion?.entryId]);
 
   if (!licitacion) return null;
@@ -106,12 +110,32 @@ function LicitacionDetail({ licitacion, onClose }) {
   const lic = licitacion;
   const tienePliegos = lic.urlPcap || lic.urlPpt;
 
-  const handleAnalizar = async () => {
+  const handleAnalizar = async (apiKeyOverride) => {
+    if (needsApiKey === null) {
+      // First click: check if server has API key configured
+      try {
+        const { configured } = await checkApiKeyConfigured();
+        if (!configured) {
+          setNeedsApiKey(true);
+          return;
+        }
+      } catch {
+        // If check fails, try to analyze anyway
+      }
+    }
+
+    const keyToUse = apiKeyOverride || manualApiKey || undefined;
+    if (needsApiKey && !keyToUse) {
+      setAnalisisError('Introduce una API key para continuar.');
+      return;
+    }
+
     setAnalizando(true);
     setAnalisisError(null);
     try {
-      const result = await analizarPliegos(lic.entryId);
+      const result = await analizarPliegos(lic.entryId, keyToUse);
       setAnalisis(result);
+      setManualApiKey('');
       setTimeout(() => {
         analisisRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
@@ -296,7 +320,27 @@ function LicitacionDetail({ licitacion, onClose }) {
           {/* Botón de análisis */}
           {tienePliegos && !analisis && !analizando && (
             <div className="analisis-section">
-              <button className="btn-analizar" onClick={handleAnalizar}>
+              {needsApiKey && (
+                <div className="apikey-prompt">
+                  <p className="apikey-message">
+                    Para usar el análisis con IA es necesario introducir una API key de Claude (Anthropic).
+                    La key <strong>no se almacenará</strong> y solo se usará para este análisis en particular.
+                  </p>
+                  <input
+                    type="password"
+                    className="apikey-input"
+                    placeholder="sk-ant-..."
+                    value={manualApiKey}
+                    onChange={(e) => setManualApiKey(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && manualApiKey && handleAnalizar(manualApiKey)}
+                  />
+                </div>
+              )}
+              <button
+                className="btn-analizar"
+                onClick={() => handleAnalizar()}
+                disabled={needsApiKey && !manualApiKey}
+              >
                 Analizar pliegos con IA
               </button>
               {analisisError && <div className="analisis-error">Error: {analisisError}</div>}

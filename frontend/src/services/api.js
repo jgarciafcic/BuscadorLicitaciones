@@ -72,8 +72,16 @@ export function getExportUrl(filtros = {}) {
   return `/api/licitaciones/export?${query}`;
 }
 
-export async function analizarPliegos(entryId) {
-  const response = await fetch(`${BACKEND_DIRECT}/api/licitaciones/analizar-pliegos?entryId=${encodeURIComponent(entryId)}`, {
+export async function checkApiKeyConfigured() {
+  const response = await fetch(`${BACKEND_DIRECT}/api/licitaciones/api-key-configured`);
+  if (!response.ok) return { configured: false };
+  return response.json();
+}
+
+export async function analizarPliegos(entryId, apiKey) {
+  const params = new URLSearchParams({ entryId });
+  if (apiKey) params.append('apiKey', apiKey);
+  const response = await fetch(`${BACKEND_DIRECT}/api/licitaciones/analizar-pliegos?${params}`, {
     method: 'POST',
   });
   if (!response.ok) {

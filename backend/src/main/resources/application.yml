@@ -10,9 +10,6 @@ placsp:
     max-pages: 50
     cron: "0 0 */8 * * *"
   llm:
-    provider: ollama                # "ollama" o "claude"
-    ollama-url: http://localhost:11434
-    ollama-model: qwen2.5:3b
     claude-api-key: ${ANTHROPIC_API_KEY:}
     claude-model: claude-sonnet-4-20250514
     max-pdf-chars: 15000

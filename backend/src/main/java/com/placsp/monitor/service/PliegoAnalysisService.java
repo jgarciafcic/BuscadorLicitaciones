@@ -5,8 +5,6 @@ import com.anthropic.client.okhttp.AnthropicOkHttpClient;
 import com.anthropic.models.messages.Message;
 import com.anthropic.models.messages.MessageCreateParams;
 import com.anthropic.models.messages.ContentBlock;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.placsp.monitor.config.LlmConfig;
 import com.placsp.monitor.model.AnalisisPliego;
 import com.placsp.monitor.model.Licitacion;
@@ -37,7 +35,6 @@ public class PliegoAnalysisService {
     private final LicitacionRepository licitacionRepository;
     private final AnalisisPliegoRepository analisisRepository;
     private final HttpClient httpClient;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     public PliegoAnalysisService(LlmConfig llmConfig,
                                   LicitacionRepository licitacionRepository,
@@ -53,7 +50,16 @@ public class PliegoAnalysisService {
 
     public record AnalisisResult(String resumenPcap, String resumenPpt, boolean fromCache) {}
 
+    public boolean isApiKeyConfigured() {
+        String key = llmConfig.getClaudeApiKey();
+        return key != null && !key.isBlank();
+    }
+
     public AnalisisResult analizar(String entryId) {
+        return analizar(entryId, null);
+    }
+
+    public AnalisisResult analizar(String entryId, String runtimeApiKey) {
         // Check cache
         Optional<AnalisisPliego> cached = analisisRepository.findByEntryId(entryId);
         if (cached.isPresent()) {
@@ -68,12 +74,18 @@ public class PliegoAnalysisService {
         String resumenPcap = null;
         String resumenPpt = null;
 
+        String apiKey = (runtimeApiKey != null && !runtimeApiKey.isBlank())
+                ? runtimeApiKey : llmConfig.getClaudeApiKey();
+        if (apiKey == null || apiKey.isBlank()) {
+            throw new IllegalStateException("No se ha proporcionado una API key de Claude");
+        }
+
         if (lic.getUrlPcap() != null && !lic.getUrlPcap().isBlank()) {
-            resumenPcap = downloadAndAnalyze(lic.getUrlPcap(), buildPcapPrompt());
+            resumenPcap = downloadAndAnalyze(lic.getUrlPcap(), buildPcapPrompt(), apiKey);
         }
 
         if (lic.getUrlPpt() != null && !lic.getUrlPpt().isBlank()) {
-            resumenPpt = downloadAndAnalyze(lic.getUrlPpt(), buildPptPrompt());
+            resumenPpt = downloadAndAnalyze(lic.getUrlPpt(), buildPptPrompt(), apiKey);
         }
 
         // Save to cache
@@ -87,7 +99,7 @@ public class PliegoAnalysisService {
         return new AnalisisResult(resumenPcap, resumenPpt, false);
     }
 
-    private String downloadAndAnalyze(String url, String prompt) {
+    private String downloadAndAnalyze(String url, String prompt, String apiKey) {
         try {
             String pdfText = downloadAndExtractText(url);
             if (pdfText == null || pdfText.isBlank()) {
@@ -99,7 +111,7 @@ public class PliegoAnalysisService {
                 pdfText = pdfText.substring(0, maxChars) + "\n\n[... texto truncado por tamaño ...]";
             }
 
-            return callLlm(prompt, pdfText);
+            return callLlm(prompt, pdfText, apiKey);
         } catch (Exception e) {
             log.error("Error analizando documento {}: {}", url, e.getMessage(), e);
             return "Error al analizar el documento: " + e.getMessage();
@@ -130,63 +142,15 @@ public class PliegoAnalysisService {
 
     // ── Dispatcher ──
 
-    private String callLlm(String systemPrompt, String documentText) {
-        String provider = llmConfig.getProvider();
-        return switch (provider) {
-            case "claude" -> callClaude(systemPrompt, documentText);
-            case "ollama" -> callOllama(systemPrompt, documentText);
-            default -> throw new IllegalArgumentException("Provider LLM no soportado: " + provider);
-        };
+    private String callLlm(String systemPrompt, String documentText, String apiKey) {
+        return callClaude(systemPrompt, documentText, apiKey);
     }
 
-    // ── Ollama ──
-
-    private String callOllama(String systemPrompt, String documentText) {
-        String model = llmConfig.getOllamaModel();
-        log.info("Llamando a Ollama ({}) con {} caracteres de texto", model, documentText.length());
-
-        try {
-            String jsonBody = objectMapper.writeValueAsString(new java.util.LinkedHashMap<>() {{
-                put("model", model);
-                put("stream", false);
-                put("options", java.util.Map.of("num_ctx", 8192));
-                put("messages", java.util.List.of(
-                        java.util.Map.of("role", "system", "content", systemPrompt),
-                        java.util.Map.of("role", "user", "content", documentText)
-                ));
-            }});
-
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(llmConfig.getOllamaUrl() + "/api/chat"))
-                    .timeout(Duration.ofMinutes(5))
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-                    .build();
-
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() != 200) {
-                throw new IOException("Ollama HTTP " + response.statusCode() + ": " + response.body());
-            }
-
-            JsonNode root = objectMapper.readTree(response.body());
-            String content = root.path("message").path("content").asText("");
-            log.info("Respuesta Ollama recibida: {} caracteres", content.length());
-            return content;
-
-        } catch (Exception e) {
-            log.error("Error llamando a Ollama: {}", e.getMessage(), e);
-            throw new RuntimeException("Error llamando a Ollama: " + e.getMessage(), e);
-        }
-    }
-
-    // ── Claude ──
-
-    private String callClaude(String systemPrompt, String documentText) {
+    private String callClaude(String systemPrompt, String documentText, String apiKey) {
         log.info("Llamando a Claude ({}) con {} caracteres de texto", llmConfig.getClaudeModel(), documentText.length());
 
         AnthropicClient client = AnthropicOkHttpClient.builder()
-                .apiKey(llmConfig.getClaudeApiKey())
+                .apiKey(apiKey)
                 .build();
 
         Message message = client.messages().create(
