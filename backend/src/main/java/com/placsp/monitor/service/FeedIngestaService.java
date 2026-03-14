@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 public class FeedIngestaService {
@@ -24,6 +25,16 @@ public class FeedIngestaService {
     private final AtomParser atomParser;
     private final LicitacionRepository repository;
     private final AppConfig appConfig;
+
+    public record IngestaProgreso(int paginaDescargada, int totalPaginas,
+                                   int entriesLeidas, int nuevasHastaAhora,
+                                   String fase) {}
+
+    private final AtomicReference<IngestaProgreso> progreso = new AtomicReference<>(null);
+
+    public IngestaProgreso getProgreso() {
+        return progreso.get();
+    }
 
     public FeedIngestaService(FeedClient feedClient, AtomParser atomParser,
                               LicitacionRepository repository, AppConfig appConfig) {
@@ -53,9 +64,13 @@ public class FeedIngestaService {
         int paginasProcesadas = 0;
 
         String url = startUrl;
+        progreso.set(new IngestaProgreso(0, maxPages, 0, 0, "Descargando feed..."));
 
         try {
             for (int page = 0; page < maxPages && url != null; page++) {
+                progreso.set(new IngestaProgreso(page + 1, maxPages, allParsed.size(), 0,
+                        "Descargando página " + (page + 1) + " de " + maxPages + "..."));
+
                 byte[] body = downloadPage(url);
                 if (body == null) break;
 
@@ -63,6 +78,9 @@ public class FeedIngestaService {
                 allParsed.addAll(result.licitaciones());
                 allDeletedRefs.addAll(result.deletedEntryRefs());
                 paginasProcesadas++;
+
+                progreso.set(new IngestaProgreso(page + 1, maxPages, allParsed.size(), 0,
+                        "Parseadas " + allParsed.size() + " entries de " + (page + 1) + " páginas"));
 
                 String nextUrl = FeedClient.extractNextLink(new ByteArrayInputStream(body)).orElse(null);
                 if (nextUrl != null) {
@@ -76,6 +94,9 @@ public class FeedIngestaService {
                 Thread.currentThread().interrupt();
             }
         }
+
+        progreso.set(new IngestaProgreso(paginasProcesadas, maxPages, allParsed.size(), 0,
+                "Filtrando y guardando en base de datos..."));
 
         int entriesLeidas = allParsed.size();
 
@@ -141,6 +162,8 @@ public class FeedIngestaService {
                 log.info("Eliminadas {} licitaciones marcadas como deleted-entry", eliminadas);
             }
         }
+
+        progreso.set(null);
 
         IngestaResumen resumen = new IngestaResumen(paginasProcesadas, entriesLeidas, nuevas, actualizadas, eliminadas, yaExistentes, solapaConBbdd, url);
         log.info("Ingesta completada: {} (solapa con BBDD: {})", resumen, solapaConBbdd);

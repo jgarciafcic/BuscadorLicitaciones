@@ -75,6 +75,11 @@
   background: #0055aa;
 }
 
+.btn-cantabria.active {
+  background: #004488;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
 .btn-load-more {
   background: #93a500;
 }

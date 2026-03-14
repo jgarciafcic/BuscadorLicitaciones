@@ -1,6 +1,6 @@
 import './LoadingSpinner.css';
 
-function LoadingSpinner() {
+function LoadingSpinner({ progreso }) {
   return (
     <div className="loading-overlay">
       <svg className="loading-logo" viewBox="0 0 558.75 507" xmlns="http://www.w3.org/2000/svg">
@@ -36,6 +36,15 @@ function LoadingSpinner() {
         </g>
       </svg>
       <span className="loading-text">Cargando licitaciones</span>
+      {progreso && (
+        <div className="loading-progress">
+          <span className="loading-progress-fase">{progreso.fase}</span>
+          <div className="loading-progress-stats">
+            <span>{progreso.entriesLeidas.toLocaleString('es-ES')} entries leídas</span>
+            <span>Página {progreso.paginaDescargada} de {progreso.totalPaginas}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

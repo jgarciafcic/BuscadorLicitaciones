@@ -16,16 +16,16 @@
 
 .loading-logo .puzzle-dark {
   transform-origin: center;
-  animation: pulse 1.2s ease-in-out infinite;
+  animation: pulse 2s ease-in-out infinite;
 }
 
 .loading-logo .puzzle-light {
   transform-origin: center;
-  animation: pulse 1.2s ease-in-out infinite 0.5s;
+  animation: pulse 2s ease-in-out infinite 0.8s;
 }
 
 .loading-logo .logo-text {
-  animation: textFade 2s ease-in-out infinite;
+  animation: textFade 3s ease-in-out infinite;
 }
 
 @keyframes pulse {
@@ -55,4 +55,31 @@
   25% { content: '.'; }
   50% { content: '..'; }
   75% { content: '...'; }
+}
+
+.loading-progress {
+  margin-top: 1rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.loading-progress-fase {
+  font-size: 0.85rem;
+  color: #3c5c77;
+  font-weight: 600;
+  transition: opacity 0.3s;
+}
+
+.loading-progress-stats {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.loading-progress-stats span {
+  font-variant-numeric: tabular-nums;
 }

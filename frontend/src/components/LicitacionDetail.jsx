@@ -74,7 +74,26 @@ function LicitacionDetail({ licitacion, onClose }) {
   const [confirmClose, setConfirmClose] = useState(false);
   const [needsApiKey, setNeedsApiKey] = useState(null); // null=not checked, true/false
   const [manualApiKey, setManualApiKey] = useState('');
+  const [progressMsg, setProgressMsg] = useState(0);
   const analisisRef = useRef(null);
+
+  const PROGRESS_MESSAGES = [
+    'Descargando pliegos desde PLACSP...',
+    'Extrayendo texto de los documentos PDF...',
+    'Enviando texto al modelo de IA para análisis...',
+    'Analizando criterios de adjudicación y solvencia...',
+    'Extrayendo tecnologías y requisitos del equipo...',
+    'Estructurando el resumen... casi listo',
+  ];
+
+  useEffect(() => {
+    if (!analizando) return;
+    setProgressMsg(0);
+    const interval = setInterval(() => {
+      setProgressMsg(prev => prev < PROGRESS_MESSAGES.length - 1 ? prev + 1 : prev);
+    }, 8000);
+    return () => clearInterval(interval);
+  }, [analizando]);
 
   const handleClose = useCallback(() => {
     if (analizando) {
@@ -354,7 +373,7 @@ function LicitacionDetail({ licitacion, onClose }) {
                 <div className="spinner-large" />
                 <div className="analisis-loading-text">
                   <strong>Analizando pliegos con IA...</strong>
-                  <span>Descargando PDFs y extrayendo información. Esto puede tardar entre 15 y 60 segundos.</span>
+                  <span className="progress-message">{PROGRESS_MESSAGES[progressMsg]}</span>
                 </div>
               </div>
               <div className="analisis-loading-bar">

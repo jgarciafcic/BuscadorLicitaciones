@@ -36,12 +36,22 @@ public class IngestaController {
     }
 
     @GetMapping("/estado")
-    @Operation(summary = "Estado de la ingesta", description = "Devuelve si hay una ingesta en curso y el número de licitaciones en BBDD.")
+    @Operation(summary = "Estado de la ingesta", description = "Devuelve si hay una ingesta en curso, el progreso y el número de licitaciones en BBDD.")
     public ResponseEntity<Map<String, Object>> estado() {
-        return ResponseEntity.ok(Map.of(
-                "ingesting", ingestaScheduler.isIngesting(),
-                "totalLicitaciones", licitacionRepository.count()
-        ));
+        var result = new java.util.LinkedHashMap<String, Object>();
+        result.put("ingesting", ingestaScheduler.isIngesting());
+        result.put("totalLicitaciones", licitacionRepository.count());
+        var prog = feedIngestaService.getProgreso();
+        if (prog != null) {
+            result.put("progreso", Map.of(
+                    "paginaDescargada", prog.paginaDescargada(),
+                    "totalPaginas", prog.totalPaginas(),
+                    "entriesLeidas", prog.entriesLeidas(),
+                    "nuevasHastaAhora", prog.nuevasHastaAhora(),
+                    "fase", prog.fase()
+            ));
+        }
+        return ResponseEntity.ok(result);
     }
 
     @PostMapping("/ejecutar")

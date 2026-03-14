@@ -19,7 +19,9 @@ function App() {
   const [initialIngesting, setInitialIngesting] = useState(false);
   const [nextFeedUrl, setNextFeedUrl] = useState(null);
   const [paginasCargadas, setPaginasCargadas] = useState(0);
+  const [ingestaProgreso, setIngestaProgreso] = useState(null);
   const pollingRef = useRef(null);
+  const progresoRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -43,17 +45,42 @@ function App() {
     return () => { cancelled = true; clearTimeout(pollingRef.current); };
   }, [initialIngesting, buscar]);
 
-  const handleCantabria = useCallback(() => {
-    const cantabriaFiltros = {
-      ...filtros,
-      estado: 'PUB',
-      tipoContrato: '2',
-      cpv: '72',
-      nutsCode: 'ES13',
+  // Polling de progreso durante ingesta
+  useEffect(() => {
+    if (!ingesting && !initialIngesting) {
+      setIngestaProgreso(null);
+      return;
+    }
+    const poll = async () => {
+      try {
+        const estado = await fetchIngestaEstado();
+        if (estado.progreso) setIngestaProgreso(estado.progreso);
+      } catch { /* ignore */ }
     };
-    setFiltros(cantabriaFiltros);
-    buscar(0, null, cantabriaFiltros);
-  }, [filtros, setFiltros, buscar]);
+    poll();
+    progresoRef.current = setInterval(poll, 2000);
+    return () => clearInterval(progresoRef.current);
+  }, [ingesting, initialIngesting]);
+
+  const isCantabriaActive = filtros.nutsCode === 'ES13';
+
+  const handleCantabria = useCallback(() => {
+    if (isCantabriaActive) {
+      const sinCantabria = { ...filtros, nutsCode: '' };
+      setFiltros(sinCantabria);
+      buscar(0, null, sinCantabria);
+    } else {
+      const cantabriaFiltros = {
+        ...filtros,
+        estado: 'PUB',
+        tipoContrato: '2',
+        cpv: '72',
+        nutsCode: 'ES13',
+      };
+      setFiltros(cantabriaFiltros);
+      buscar(0, null, cantabriaFiltros);
+    }
+  }, [filtros, isCantabriaActive, setFiltros, buscar]);
 
   const handleIngesta = useCallback(async (fromUrl = null) => {
     setIngesting(true);
@@ -89,7 +116,9 @@ function App() {
         </div>
         <div className="header-actions">
           <button className="btn-manual" onClick={() => setShowManual(true)} title="Manual de uso">?</button>
-          <button className="btn-cantabria" onClick={handleCantabria}>Licitaciones Cantabria</button>
+          <button className={`btn-cantabria${isCantabriaActive ? ' active' : ''}`} onClick={handleCantabria}>
+            {isCantabriaActive ? 'Cantabria ✕' : 'Licitaciones Cantabria'}
+          </button>
           <button className="btn-ingesta" onClick={() => { setNextFeedUrl(null); setPaginasCargadas(0); handleIngesta(null); }} disabled={ingesting}>
             {ingesting ? 'Cargando...' : 'Cargar de origen'}
           </button>
@@ -105,7 +134,7 @@ function App() {
         <ResultsSummary stats={stats} loading={loading} filtros={filtros} />
         {error && <div className="error-msg">Error: {error}</div>}
         <ResultsTable resultados={resultados} loading={loading} onPageChange={buscar} sort={sort} onSortChange={cambiarSort} onRowClick={setSeleccionada} cpvPrefix={filtros.cpv} />
-        {(loading || ingesting || initialIngesting) && <LoadingSpinner />}
+        {(loading || ingesting || initialIngesting) && <LoadingSpinner progreso={ingestaProgreso} />}
       </main>
       <LicitacionDetail licitacion={seleccionada} onClose={() => setSeleccionada(null)} />
       {showManual && <UserManual onClose={() => setShowManual(false)} />}
