@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: placsp-monitor-backend
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /api-docs
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: PGHOST
+        fromDatabase:
+          name: placsp-db
+          property: host
+      - key: PGPORT
+        fromDatabase:
+          name: placsp-db
+          property: port
+      - key: PGDATABASE
+        fromDatabase:
+          name: placsp-db
+          property: database
+      - key: PGUSER
+        fromDatabase:
+          name: placsp-db
+          property: user
+      - key: PGPASSWORD
+        fromDatabase:
+          name: placsp-db
+          property: password
+
+databases:
+  - name: placsp-db
+    plan: free
