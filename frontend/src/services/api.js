@@ -1,7 +1,7 @@
 // En producción (Netlify), las llamadas largas van directo a Railway para evitar
 // el timeout de 26s del proxy. En desarrollo, todo va al proxy de Vite.
 const BACKEND_DIRECT = import.meta.env.PROD
-  ? 'https://buscadorlicitaciones-back.onrender.com'
+  ? 'https://meticulous-prosperity-production.up.railway.app'
   : '';
 
 const DEFAULT_FILTERS = {

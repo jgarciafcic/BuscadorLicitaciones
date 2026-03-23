@@ -4,7 +4,7 @@
 
 [[redirects]]
   from = "/api/*"
-  to = "https://buscadorlicitaciones-back.onrender.com/api/:splat"
+  to = "https://meticulous-prosperity-production.up.railway.app/api/:splat"
   status = 200
   force = true
 
