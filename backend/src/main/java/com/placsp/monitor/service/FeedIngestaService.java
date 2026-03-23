@@ -3,12 +3,9 @@ package com.placsp.monitor.service;
 import com.placsp.monitor.config.AppConfig;
 import com.placsp.monitor.model.Licitacion;
 import com.placsp.monitor.repository.LicitacionRepository;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,9 +26,6 @@ public class FeedIngestaService {
     private final AtomParser atomParser;
     private final LicitacionRepository repository;
     private final AppConfig appConfig;
-
-    @PersistenceContext
-    private EntityManager entityManager;
 
     public record IngestaProgreso(int paginaDescargada, int totalPaginas,
                                    int entriesLeidas, int nuevasHastaAhora,
@@ -116,7 +110,6 @@ public class FeedIngestaService {
         return resumen;
     }
 
-    @Transactional
     protected PageStats procesarYGuardar(List<Licitacion> licitaciones, List<String> deletedRefs) {
         // Deduplicar: quedarse con la de mayor fechaActualizacion por entryId
         Map<String, Licitacion> deduped = new LinkedHashMap<>();
@@ -162,8 +155,6 @@ public class FeedIngestaService {
             for (int i = 0; i < toSave.size(); i += SAVE_BATCH_SIZE) {
                 List<Licitacion> batch = toSave.subList(i, Math.min(i + SAVE_BATCH_SIZE, toSave.size()));
                 repository.saveAll(batch);
-                entityManager.flush();
-                entityManager.clear();
             }
             log.info("Guardadas {} licitaciones ({} nuevas, {} actualizadas)", toSave.size(), nuevas, actualizadas);
         }
