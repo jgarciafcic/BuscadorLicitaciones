@@ -37,7 +37,12 @@ export async function fetchLicitaciones(filtros = {}, page = 0, size = 20, sort 
   if (!response.ok) {
     throw new Error(`Error ${response.status}: ${response.statusText}`);
   }
-  return response.json();
+  const data = await response.json();
+  // Spring Data VIA_DTO nests pagination metadata under "page"
+  if (data.page && data.totalElements === undefined) {
+    return { ...data, ...data.page };
+  }
+  return data;
 }
 
 export async function fetchStats(filtros = {}) {
