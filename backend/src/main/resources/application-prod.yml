@@ -3,14 +3,21 @@ server:
     encoding:
       charset: UTF-8
       force: true
+  tomcat:
+    max-threads: 10
 
 spring:
+  main:
+    lazy-initialization: true
   datasource:
     url: jdbc:postgresql://${PGHOST}:${PGPORT:5432}/${PGDATABASE}
     username: ${PGUSER}
     password: ${PGPASSWORD}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 3
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: update
     properties:
