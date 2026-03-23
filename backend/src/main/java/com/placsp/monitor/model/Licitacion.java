@@ -60,6 +60,9 @@ public class Licitacion {
     @Column(length = 1000)
     private String urlPpt;
 
+    @Column(length = 1000)
+    private String urlAnuncio;
+
     private LocalDateTime fechaActualizacion;
 
     private LocalDateTime fechaIngesta;
@@ -237,6 +240,14 @@ public class Licitacion {
 
     public void setUrlPpt(String urlPpt) {
         this.urlPpt = urlPpt;
+    }
+
+    public String getUrlAnuncio() {
+        return urlAnuncio;
+    }
+
+    public void setUrlAnuncio(String urlAnuncio) {
+        this.urlAnuncio = urlAnuncio;
     }
 
     public LocalDateTime getFechaActualizacion() {

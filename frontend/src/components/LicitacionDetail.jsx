@@ -127,7 +127,7 @@ function LicitacionDetail({ licitacion, onClose }) {
   if (!licitacion) return null;
 
   const lic = licitacion;
-  const tienePliegos = lic.urlPcap || lic.urlPpt;
+  const tienePliegos = lic.urlPcap || lic.urlPpt || lic.urlAnuncio;
 
   const handleAnalizar = async (apiKeyOverride) => {
     if (needsApiKey === null) {
@@ -248,6 +248,8 @@ function LicitacionDetail({ licitacion, onClose }) {
               {lic.urlPcap && <a href={lic.urlPcap} target="_blank" rel="noopener noreferrer">PCAP</a>}
               {lic.urlPcap && lic.urlPpt && ' | '}
               {lic.urlPpt && <a href={lic.urlPpt} target="_blank" rel="noopener noreferrer">PPT</a>}
+              {(lic.urlPcap || lic.urlPpt) && lic.urlAnuncio && ' | '}
+              {lic.urlAnuncio && <a href={lic.urlAnuncio} target="_blank" rel="noopener noreferrer">Anuncio</a>}
               {!tienePliegos && '—'}
             </dd>
 

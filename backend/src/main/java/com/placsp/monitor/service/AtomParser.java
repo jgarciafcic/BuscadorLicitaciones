@@ -82,6 +82,7 @@ public class AtomParser {
             boolean inCommodityClassification = false;
             boolean inLegalDocRef = false;
             boolean inTechnicalDocRef = false;
+            boolean inAdditionalDocRef = false;
             boolean inAttachment = false;
             boolean inExternalRef = false;
             boolean inPlannedPeriod = false;
@@ -243,8 +244,12 @@ public class AtomParser {
                         if (NS_CAC.equals(ns) && "TechnicalDocumentReference".equals(local)) {
                             inTechnicalDocRef = true;
                         }
+                        // AdditionalDocumentReference (Anuncio)
+                        if (NS_CAC.equals(ns) && "AdditionalDocumentReference".equals(local)) {
+                            inAdditionalDocRef = true;
+                        }
                         // Attachment > ExternalReference (inside doc refs)
-                        if ((inLegalDocRef || inTechnicalDocRef) && NS_CAC.equals(ns) && "Attachment".equals(local)) {
+                        if ((inLegalDocRef || inTechnicalDocRef || inAdditionalDocRef) && NS_CAC.equals(ns) && "Attachment".equals(local)) {
                             inAttachment = true;
                         }
                         if (inAttachment && NS_CAC.equals(ns) && "ExternalReference".equals(local)) {
@@ -375,12 +380,14 @@ public class AtomParser {
                                 }
                             }
 
-                            // Document reference URIs (PCAP / PPT)
+                            // Document reference URIs (PCAP / PPT / Anuncio)
                             if (inExternalRef && NS_CBC.equals(ns) && "URI".equals(local)) {
                                 if (inLegalDocRef && current.getUrlPcap() == null) {
                                     current.setUrlPcap(text);
                                 } else if (inTechnicalDocRef && current.getUrlPpt() == null) {
                                     current.setUrlPpt(text);
+                                } else if (inAdditionalDocRef && current.getUrlAnuncio() == null) {
+                                    current.setUrlAnuncio(text);
                                 }
                             }
 
@@ -487,6 +494,7 @@ public class AtomParser {
                         if (NS_CAC.equals(ns) && "Attachment".equals(local)) inAttachment = false;
                         if (NS_CAC.equals(ns) && "LegalDocumentReference".equals(local)) { inLegalDocRef = false; inAttachment = false; inExternalRef = false; }
                         if (NS_CAC.equals(ns) && "TechnicalDocumentReference".equals(local)) { inTechnicalDocRef = false; inAttachment = false; inExternalRef = false; }
+                        if (NS_CAC.equals(ns) && "AdditionalDocumentReference".equals(local)) { inAdditionalDocRef = false; inAttachment = false; inExternalRef = false; }
                         if (NS_CAC_PLACE.equals(ns) && "ContractFolderStatus".equals(local)) inContractFolder = false;
 
                         // entry end
