@@ -8,8 +8,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -49,60 +49,71 @@ public class FeedIngestaService {
                                  int yaExistentes, boolean solapaConBbdd,
                                  String nextPageUrl) {}
 
-    @Transactional
+    private record PageStats(int nuevas, int actualizadas, int eliminadas, int yaExistentes) {}
+
     public IngestaResumen ejecutar() {
         return ejecutar(appConfig.getMaxPages(), null);
     }
 
-    @Transactional
     public IngestaResumen ejecutar(int maxPages, String fromUrl) {
-        String startUrl = (fromUrl != null && !fromUrl.isBlank()) ? fromUrl : appConfig.getUrl();
-        log.info("Iniciando ingesta del feed PLACSP ({} páginas máx.) desde {}", maxPages, startUrl);
+        String nextUrl = (fromUrl != null && !fromUrl.isBlank()) ? fromUrl : appConfig.getUrl();
+        log.info("Iniciando ingesta del feed PLACSP ({} páginas máx.) desde {}", maxPages, nextUrl);
 
-        List<Licitacion> allParsed = new ArrayList<>();
-        List<String> allDeletedRefs = new ArrayList<>();
         int paginasProcesadas = 0;
+        int totalEntriesLeidas = 0;
+        int totalNuevas = 0;
+        int totalActualizadas = 0;
+        int totalEliminadas = 0;
+        int totalYaExistentes = 0;
+        boolean solapaConBbdd = false;
 
-        String url = startUrl;
-        progreso.set(new IngestaProgreso(0, maxPages, 0, 0, "Descargando feed..."));
+        progreso.set(new IngestaProgreso(0, maxPages, 0, 0, "Iniciando ingesta..."));
 
-        try {
-            for (int page = 0; page < maxPages && url != null; page++) {
-                progreso.set(new IngestaProgreso(page + 1, maxPages, allParsed.size(), 0,
-                        "Descargando página " + (page + 1) + " de " + maxPages + "..."));
+        for (int page = 0; page < maxPages && nextUrl != null; page++) {
+            progreso.set(new IngestaProgreso(page + 1, maxPages, totalEntriesLeidas, totalNuevas,
+                    "Descargando página " + (page + 1) + " de " + maxPages + "..."));
 
-                byte[] body = downloadPage(url);
-                if (body == null) break;
+            try (InputStream stream = feedClient.download(nextUrl)) {
+                AtomParser.ParseResult result = atomParser.parse(stream);
 
-                AtomParser.ParseResult result = atomParser.parse(new ByteArrayInputStream(body));
-                allParsed.addAll(result.licitaciones());
-                allDeletedRefs.addAll(result.deletedEntryRefs());
+                progreso.set(new IngestaProgreso(page + 1, maxPages, totalEntriesLeidas + result.licitaciones().size(), totalNuevas,
+                        "Guardando página " + (page + 1) + "..."));
+
+                PageStats stats = procesarYGuardar(result.licitaciones(), result.deletedEntryRefs());
+
+                totalEntriesLeidas += result.licitaciones().size();
+                totalNuevas += stats.nuevas();
+                totalActualizadas += stats.actualizadas();
+                totalEliminadas += stats.eliminadas();
+                totalYaExistentes += stats.yaExistentes();
+                if (stats.yaExistentes() > 0 || stats.actualizadas() > 0) solapaConBbdd = true;
                 paginasProcesadas++;
 
-                progreso.set(new IngestaProgreso(page + 1, maxPages, allParsed.size(), 0,
-                        "Parseadas " + allParsed.size() + " entries de " + (page + 1) + " páginas"));
+                nextUrl = result.nextLink();
 
-                String nextUrl = FeedClient.extractNextLink(new ByteArrayInputStream(body)).orElse(null);
-                if (nextUrl != null) {
-                    log.debug("Siguiente página ({}/{}): {}", page + 2, maxPages, nextUrl);
-                }
-                url = nextUrl;
-            }
-        } catch (IOException | InterruptedException e) {
-            log.error("Error durante la descarga del feed: {}", e.getMessage(), e);
-            if (e instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
+                progreso.set(new IngestaProgreso(page + 1, maxPages, totalEntriesLeidas, totalNuevas,
+                        "Página " + (page + 1) + " guardada (" + stats.nuevas() + " nuevas)"));
+
+            } catch (IOException | InterruptedException e) {
+                log.error("Error durante la ingesta en página {}: {}", page + 1, e.getMessage(), e);
+                if (e instanceof InterruptedException) Thread.currentThread().interrupt();
+                break;
             }
         }
 
-        progreso.set(new IngestaProgreso(paginasProcesadas, maxPages, allParsed.size(), 0,
-                "Filtrando y guardando en base de datos..."));
+        progreso.set(null);
 
-        int entriesLeidas = allParsed.size();
+        IngestaResumen resumen = new IngestaResumen(paginasProcesadas, totalEntriesLeidas,
+                totalNuevas, totalActualizadas, totalEliminadas, totalYaExistentes, solapaConBbdd, nextUrl);
+        log.info("Ingesta completada: {} (solapa con BBDD: {})", resumen, solapaConBbdd);
+        return resumen;
+    }
 
+    @Transactional
+    protected PageStats procesarYGuardar(List<Licitacion> licitaciones, List<String> deletedRefs) {
         // Deduplicar: quedarse con la de mayor fechaActualizacion por entryId
         Map<String, Licitacion> deduped = new LinkedHashMap<>();
-        for (Licitacion lic : allParsed) {
+        for (Licitacion lic : licitaciones) {
             if (lic.getEntryId() == null) continue;
             deduped.merge(lic.getEntryId(), lic, (existing, incoming) -> {
                 if (existing.getFechaActualizacion() == null) return incoming;
@@ -112,17 +123,12 @@ public class FeedIngestaService {
             });
         }
 
-        // Determinar nuevas vs actualizadas
         List<String> ids = new ArrayList<>(deduped.keySet());
         List<Licitacion> existentes = repository.findAllById(ids);
         Map<String, Licitacion> existentesMap = new LinkedHashMap<>();
-        for (Licitacion e : existentes) {
-            existentesMap.put(e.getEntryId(), e);
-        }
+        for (Licitacion e : existentes) existentesMap.put(e.getEntryId(), e);
 
-        int nuevas = 0;
-        int actualizadas = 0;
-        int yaExistentes = 0;
+        int nuevas = 0, actualizadas = 0, yaExistentes = 0;
         List<Licitacion> toSave = new ArrayList<>();
 
         for (Licitacion lic : deduped.values()) {
@@ -145,17 +151,14 @@ public class FeedIngestaService {
             }
         }
 
-        boolean solapaConBbdd = yaExistentes > 0 || actualizadas > 0;
-
         if (!toSave.isEmpty()) {
             repository.saveAll(toSave);
             log.info("Guardadas {} licitaciones ({} nuevas, {} actualizadas)", toSave.size(), nuevas, actualizadas);
         }
 
-        // Eliminar deleted-entries
         int eliminadas = 0;
-        if (!allDeletedRefs.isEmpty()) {
-            List<Licitacion> aEliminar = repository.findAllById(allDeletedRefs);
+        if (!deletedRefs.isEmpty()) {
+            List<Licitacion> aEliminar = repository.findAllById(deletedRefs);
             if (!aEliminar.isEmpty()) {
                 repository.deleteAll(aEliminar);
                 eliminadas = aEliminar.size();
@@ -163,16 +166,6 @@ public class FeedIngestaService {
             }
         }
 
-        progreso.set(null);
-
-        IngestaResumen resumen = new IngestaResumen(paginasProcesadas, entriesLeidas, nuevas, actualizadas, eliminadas, yaExistentes, solapaConBbdd, url);
-        log.info("Ingesta completada: {} (solapa con BBDD: {})", resumen, solapaConBbdd);
-        return resumen;
-    }
-
-    private byte[] downloadPage(String url) throws IOException, InterruptedException {
-        try (var is = feedClient.download(url)) {
-            return is.readAllBytes();
-        }
+        return new PageStats(nuevas, actualizadas, eliminadas, yaExistentes);
     }
 }

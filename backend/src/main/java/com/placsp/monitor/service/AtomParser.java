@@ -34,11 +34,12 @@ public class AtomParser {
     private static final String NS_CBC_PLACE = "urn:dgpe:names:draft:codice-place-ext:schema:xsd:CommonBasicComponents-2";
     private static final String NS_TOMBSTONE = "http://purl.org/atompub/tombstones/1.0";
 
-    public record ParseResult(List<Licitacion> licitaciones, List<String> deletedEntryRefs) {}
+    public record ParseResult(List<Licitacion> licitaciones, List<String> deletedEntryRefs, String nextLink) {}
 
     public ParseResult parse(InputStream xml) {
         List<Licitacion> licitaciones = new ArrayList<>();
         List<String> deletedRefs = new ArrayList<>();
+        String nextLink = null;
 
         XMLInputFactory factory = XMLInputFactory.newInstance();
         factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
@@ -114,6 +115,14 @@ public class AtomParser {
                         String ref = reader.getAttributeValue(null, "ref");
                         if (ref != null) {
                             deletedRefs.add(ref);
+                        }
+                    }
+
+                    // feed-level next link (outside any entry)
+                    if (!inEntry && NS_ATOM.equals(ns) && "link".equals(local)) {
+                        String rel = reader.getAttributeValue(null, "rel");
+                        if ("next".equals(rel)) {
+                            nextLink = reader.getAttributeValue(null, "href");
                         }
                     }
 
@@ -539,7 +548,7 @@ public class AtomParser {
         }
 
         log.info("Parseadas {} licitaciones, {} deleted-entries", licitaciones.size(), deletedRefs.size());
-        return new ParseResult(licitaciones, deletedRefs);
+        return new ParseResult(licitaciones, deletedRefs, nextLink);
     }
 
     private static String jsonEscape(String s) {
