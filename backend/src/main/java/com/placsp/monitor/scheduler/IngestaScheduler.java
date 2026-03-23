@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class IngestaScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(IngestaScheduler.class);
-    private static final int INITIAL_PAGES = 5;
+    private static final int INITIAL_PAGES = 1;
 
     private final FeedIngestaService feedIngestaService;
     private final LicitacionRepository repository;
@@ -33,7 +33,9 @@ public class IngestaScheduler {
 
     @EventListener(ApplicationReadyEvent.class)
     @Async
-    public void ingestaInicial() {
+    public void ingestaInicial() throws InterruptedException {
+        // Esperar a que la JVM estabilice memoria tras el arranque
+        Thread.sleep(90_000);
         if (repository.count() > 0) {
             log.info("Base de datos con {} licitaciones, se omite ingesta inicial", repository.count());
             return;

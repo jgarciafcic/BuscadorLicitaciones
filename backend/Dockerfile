@@ -19,4 +19,4 @@ RUN apk add --no-cache ca-certificates
 COPY --from=build /app/target/*.jar app.jar
 ENV SPRING_PROFILES_ACTIVE=prod
 EXPOSE 8080
-ENTRYPOINT ["java", "-Xmx400m", "-XX:+UseSerialGC", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Xmx180m", "-XX:MaxMetaspaceSize=90m", "-Xss256k", "-XX:ReservedCodeCacheSize=32m", "-XX:+UseSerialGC", "-jar", "app.jar"]

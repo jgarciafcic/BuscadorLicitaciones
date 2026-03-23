@@ -3,6 +3,8 @@ package com.placsp.monitor.service;
 import com.placsp.monitor.config.AppConfig;
 import com.placsp.monitor.model.Licitacion;
 import com.placsp.monitor.repository.LicitacionRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -21,10 +23,15 @@ public class FeedIngestaService {
 
     private static final Logger log = LoggerFactory.getLogger(FeedIngestaService.class);
 
+    private static final int SAVE_BATCH_SIZE = 25;
+
     private final FeedClient feedClient;
     private final AtomParser atomParser;
     private final LicitacionRepository repository;
     private final AppConfig appConfig;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     public record IngestaProgreso(int paginaDescargada, int totalPaginas,
                                    int entriesLeidas, int nuevasHastaAhora,
@@ -152,7 +159,12 @@ public class FeedIngestaService {
         }
 
         if (!toSave.isEmpty()) {
-            repository.saveAll(toSave);
+            for (int i = 0; i < toSave.size(); i += SAVE_BATCH_SIZE) {
+                List<Licitacion> batch = toSave.subList(i, Math.min(i + SAVE_BATCH_SIZE, toSave.size()));
+                repository.saveAll(batch);
+                entityManager.flush();
+                entityManager.clear();
+            }
             log.info("Guardadas {} licitaciones ({} nuevas, {} actualizadas)", toSave.size(), nuevas, actualizadas);
         }
 
