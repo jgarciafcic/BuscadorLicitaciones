@@ -82,10 +82,8 @@ public class AtomParser {
             boolean inCommodityClassification = false;
             boolean inLegalDocRef = false;
             boolean inTechnicalDocRef = false;
-            boolean inGeneralDocRef = false;
             boolean inAttachment = false;
             boolean inExternalRef = false;
-            String pendingGeneralDocUri = null;
             boolean inPlannedPeriod = false;
             boolean inContractExtension = false;
             boolean inOptionValidityPeriod = false;
@@ -245,13 +243,8 @@ public class AtomParser {
                         if (NS_CAC.equals(ns) && "TechnicalDocumentReference".equals(local)) {
                             inTechnicalDocRef = true;
                         }
-                        // GeneralDocumentDocumentReference (Anuncio licitación y otros)
-                        if (NS_CAC_PLACE.equals(ns) && "GeneralDocumentDocumentReference".equals(local)) {
-                            inGeneralDocRef = true;
-                            pendingGeneralDocUri = null;
-                        }
                         // Attachment > ExternalReference (inside doc refs)
-                        if ((inLegalDocRef || inTechnicalDocRef || inGeneralDocRef) && NS_CAC.equals(ns) && "Attachment".equals(local)) {
+                        if ((inLegalDocRef || inTechnicalDocRef) && NS_CAC.equals(ns) && "Attachment".equals(local)) {
                             inAttachment = true;
                         }
                         if (inAttachment && NS_CAC.equals(ns) && "ExternalReference".equals(local)) {
@@ -388,17 +381,7 @@ public class AtomParser {
                                     current.setUrlPcap(text);
                                 } else if (inTechnicalDocRef && current.getUrlPpt() == null) {
                                     current.setUrlPpt(text);
-                                } else if (inGeneralDocRef) {
-                                    pendingGeneralDocUri = text;
                                 }
-                            }
-                            // FileName en GeneralDocument — detectar "Anuncio licitación"
-                            if (inExternalRef && inGeneralDocRef && NS_CBC.equals(ns) && "FileName".equals(local)) {
-                                if (pendingGeneralDocUri != null && text.toLowerCase().contains("anuncio licitaci")
-                                        && current.getUrlAnuncio() == null) {
-                                    current.setUrlAnuncio(pendingGeneralDocUri);
-                                }
-                                pendingGeneralDocUri = null;
                             }
 
                             // TenderingProcess fields
@@ -504,7 +487,6 @@ public class AtomParser {
                         if (NS_CAC.equals(ns) && "Attachment".equals(local)) inAttachment = false;
                         if (NS_CAC.equals(ns) && "LegalDocumentReference".equals(local)) { inLegalDocRef = false; inAttachment = false; inExternalRef = false; }
                         if (NS_CAC.equals(ns) && "TechnicalDocumentReference".equals(local)) { inTechnicalDocRef = false; inAttachment = false; inExternalRef = false; }
-                        if (NS_CAC_PLACE.equals(ns) && "GeneralDocumentDocumentReference".equals(local)) { inGeneralDocRef = false; inAttachment = false; inExternalRef = false; pendingGeneralDocUri = null; }
                         if (NS_CAC_PLACE.equals(ns) && "ContractFolderStatus".equals(local)) inContractFolder = false;
 
                         // entry end

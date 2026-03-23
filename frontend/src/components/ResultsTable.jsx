@@ -128,9 +128,7 @@ function ResultsTable({ resultados, loading, onPageChange, sort, onSortChange, o
                 {lic.urlPcap && <a href={lic.urlPcap} target="_blank" rel="noopener noreferrer" title="Pliego cláusulas administrativas" onClick={(e) => e.stopPropagation()}>PCAP</a>}
                 {lic.urlPcap && lic.urlPpt && ' | '}
                 {lic.urlPpt && <a href={lic.urlPpt} target="_blank" rel="noopener noreferrer" title="Pliego prescripciones técnicas" onClick={(e) => e.stopPropagation()}>PPT</a>}
-                {(lic.urlPcap || lic.urlPpt) && lic.urlAnuncio && ' | '}
-                {lic.urlAnuncio && <a href={lic.urlAnuncio} target="_blank" rel="noopener noreferrer" title="Anuncio de licitación" onClick={(e) => e.stopPropagation()}>Anuncio</a>}
-                {!lic.urlPcap && !lic.urlPpt && !lic.urlAnuncio && '—'}
+                {!lic.urlPcap && !lic.urlPpt && '—'}
               </td>
               <td className="col-importe">{formatImporte(lic.importeSinImpuestos)}</td>
             </tr>
